@@ -12,7 +12,14 @@ import {
 } from '../engine/palette';
 import { drawSprite } from '../engine/sprite';
 import { type SolTime, starOpacity } from '../engine/time';
-import { SPR_BLOB_BODY, SPR_BLOB_EYES_OPEN, SPR_BLOB_MOUTH, SPR_CAN_HELD } from '../sprites/blob';
+import {
+  SPR_BLOB_BODY,
+  SPR_BLOB_BODY_HAZMAT,
+  SPR_BLOB_EYES_OPEN,
+  SPR_BLOB_HELMET,
+  SPR_BLOB_MOUTH,
+  SPR_CAN_HELD,
+} from '../sprites/blob';
 import { TILE_SOIL } from '../sprites/tiles';
 import { GardenState } from '../state/garden-state';
 import { BedView } from './bed-view';
@@ -35,8 +42,12 @@ export class GardenScene {
   private starsContainer = new Container();
   private starTwinkle: Array<{ rect: Graphics; phase: number; period: number }> = [];
   private blobBody = new Container();
+  private blobBodyG!: Graphics;
+  private blobBodyHazmatG!: Graphics;
+  private blobHelmet = new Container();
   private blobEyes = new Container();
   private blobMouth = new Container();
+  private hazmat = false;
 
   private sun!: Celestial;
   private sun2!: Celestial;
@@ -186,11 +197,21 @@ export class GardenScene {
   }
 
   private buildBlob(): void {
-    const bodyG = new Graphics();
-    drawSprite(bodyG, SPR_BLOB_BODY);
-    bodyG.pivot.set(8, 16);
-    bodyG.position.set(8, 16);
-    this.blobBody.addChild(bodyG);
+    // Stack two body sprites — normal + hazmat — and toggle visibility based
+    // on player.inBunker so we don't rebuild geometry every frame.
+    this.blobBodyG = new Graphics();
+    drawSprite(this.blobBodyG, SPR_BLOB_BODY);
+    this.blobBodyG.pivot.set(8, 16);
+    this.blobBodyG.position.set(8, 16);
+    this.blobBody.addChild(this.blobBodyG);
+
+    this.blobBodyHazmatG = new Graphics();
+    drawSprite(this.blobBodyHazmatG, SPR_BLOB_BODY_HAZMAT);
+    this.blobBodyHazmatG.pivot.set(8, 16);
+    this.blobBodyHazmatG.position.set(8, 16);
+    this.blobBodyHazmatG.visible = false;
+    this.blobBody.addChild(this.blobBodyHazmatG);
+
     this.blobBody.x = 48;
     this.blobBody.y = 64;
 
@@ -208,13 +229,31 @@ export class GardenScene {
     this.blobEyes.x = 48;
     this.blobEyes.y = 64;
 
-    this.root.addChild(this.blobBody, this.blobMouth, this.blobEyes);
+    // Helmet bubble — sits over the blob with a glassy alpha. Hidden in
+    // civvies, visible with the hazmat suit.
+    const helmetG = new Graphics();
+    drawSprite(helmetG, SPR_BLOB_HELMET);
+    this.blobHelmet.addChild(helmetG);
+    this.blobHelmet.x = 48;
+    this.blobHelmet.y = 48;
+    this.blobHelmet.alpha = 0.55;
+    this.blobHelmet.visible = false;
+
+    this.root.addChild(this.blobBody, this.blobMouth, this.blobEyes, this.blobHelmet);
 
     const can = new Graphics();
     drawSprite(can, SPR_CAN_HELD);
     can.x = 60;
     can.y = 68;
     this.root.addChild(can);
+  }
+
+  setHazmat(on: boolean): void {
+    if (on === this.hazmat) return;
+    this.hazmat = on;
+    this.blobBodyG.visible = !on;
+    this.blobBodyHazmatG.visible = on;
+    this.blobHelmet.visible = on;
   }
 
   // === per-frame update ===

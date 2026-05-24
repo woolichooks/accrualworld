@@ -34,8 +34,10 @@ npm run build    # typecheck + production bundle into dist/
 - [x] **M2 · Core loop** — sol-time plant growth, tap-to-harvest with BURST +
       LOOT one-shots, tap-to-plant via a 10-slot seed picker, inventory state,
       MIRA dialogue reflects the current action. (Watering deferred to M3.)
-- [ ] **M3 · Survival layer** — AIR / SUIT / HP meters, hazmat-suit swap,
-      bunker safe-zone.
+- [x] **M3 · Survival layer** — AIR / SUIT / HP meters drain in real time
+      outside the bunker, hazmat-suit + helmet swap on the blob, AIR LOW
+      alert sticker, B-key toggles bunker safe-zone, passout auto-respawns
+      to the bunker with meters at 50.
 - [ ] **M4 · Crafting + potions** — cauldron scene, the 8 canonical recipes.
 - [ ] **M5 · Riddles + codex** — FASB terminal, tier-gated seed unlocks,
       Earth ↔ Mutation codex pages.
