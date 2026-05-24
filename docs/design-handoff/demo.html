@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Pocket Garden — Handoff Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Caveat:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #1a0a3e; font-family: 'Inter', system-ui, sans-serif; color: #f4e9c8; }
+  h1 { font-family: 'DM Serif Display', serif; font-style: italic; padding: 24px 28px 8px; margin: 0; font-size: 28px; }
+  p.intro { padding: 0 28px 16px; margin: 0; max-width: 880px; opacity: 0.85; font-size: 14px; line-height: 1.5; }
+  .label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.3em; color: #c5d4ff; padding: 24px 28px 8px; opacity: 0.85; }
+  .scene-wrap { position: relative; width: 1280px; height: 800px; margin: 0 28px 32px; border-radius: 6px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
+  .art-frame { width: 100%; height: 100%; overflow: hidden; position: relative; }
+</style>
+</head>
+<body>
+<h1>Pocket Garden — Handoff Demo</h1>
+<p class="intro">Live render of the four handed-off artboards (G1 + Survival/Story + Potion Compendium + Wonder Log). Each scene is its own 1280×800 canvas. Open this file in a browser to reference layouts, sprite scales, animation timings, and copy.</p>
+
+<div class="label">G1 · POCKET GARDEN — animated handheld (Dawn palette)</div>
+<div class="scene-wrap" id="g1"></div>
+
+<div class="label">I · SURVIVAL, RIDDLES &amp; WONDER — 5-screen flow</div>
+<div class="scene-wrap" id="story"></div>
+
+<div class="label">J · POTION COMPENDIUM — 8 brews</div>
+<div class="scene-wrap" id="potions"></div>
+
+<div class="label">K · WONDER LOG — 5 moments</div>
+<div class="scene-wrap" id="wonders"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="src/art-pocket.jsx"></script>
+<script type="text/babel" src="src/art-pocket-story.jsx"></script>
+<script type="text/babel" src="src/art-pocket-potions.jsx"></script>
+<script type="text/babel" src="src/art-pocket-wonders.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+  ReactDOM.createRoot(document.getElementById('g1')).render(<window.ArtPocketDawn/>);
+  ReactDOM.createRoot(document.getElementById('story')).render(<window.ArtPocketStory/>);
+  ReactDOM.createRoot(document.getElementById('potions')).render(<window.ArtPocketPotions/>);
+  ReactDOM.createRoot(document.getElementById('wonders')).render(<window.ArtPocketWonders/>);
+</script>
+</body>
+</html>

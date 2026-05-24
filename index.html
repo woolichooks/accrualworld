@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Accrualworld — Pocket Garden</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Caveat:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: radial-gradient(
+          ellipse 70% 60% at 50% 40%,
+          #4a3a8a 0%,
+          #2a1a55 60%,
+          #1a0a3e 100%
+        );
+        overflow: hidden;
+        font-family: 'JetBrains Mono', monospace;
+        color: #c5d4ff;
+      }
+      #app {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+      }
+      canvas {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+      }
+      .caption {
+        position: absolute;
+        bottom: 18px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        color: #8a8ee0;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div class="caption">ACCRUALWORLD · POCKET GARDEN · MILESTONE 1</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

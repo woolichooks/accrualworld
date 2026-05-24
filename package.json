@@ -1,0 +1,20 @@
+{
+  "name": "accrualworld",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Pocket Garden — a survival garden sim on a hostile exoplanet, gated by FASB accounting riddles.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pixi.js": "^8.6.6"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7"
+  }
+}
