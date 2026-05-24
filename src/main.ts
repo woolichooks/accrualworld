@@ -51,8 +51,8 @@ async function boot(): Promise<void> {
           view.triggerHarvestFx(now());
           const total = garden.inventory.get(species) ?? 0;
           dialogue.showHint(
-            `+1 ${SPECIES_LABEL[species]}  (×${total} total)`,
-            { press: '- tap another plant or empty bed.', key: '', tail: '' },
+            `+1 ${SPECIES_LABEL[species].toUpperCase()}`,
+            { press: 'TOTAL', key: `×${total}`, tail: '' },
           );
         }
       } else if (stage === 'empty') {
@@ -67,8 +67,8 @@ async function boot(): Promise<void> {
     if (pendingBed === null) return;
     const planted = garden.plant(pendingBed, species, now());
     if (planted) {
-      dialogue.showHint(`planted ${SPECIES_LABEL[species]}.`, {
-        press: '- it will bloom in ~18s.',
+      dialogue.showHint(`PLANTED ${SPECIES_LABEL[species].toUpperCase()}`, {
+        press: 'BLOOMS IN ~18S',
         key: '',
         tail: '',
       });
@@ -81,10 +81,10 @@ async function boot(): Promise<void> {
   };
 
   function showDefaultHint(): void {
-    dialogue.showHint('the prism-thorn is ready to harvest', {
-      press: '- press',
+    dialogue.showHint('PRISM-THORN READY', {
+      press: '(',
       key: 'A',
-      tail: 'to take a clipping.',
+      tail: ') HARVEST',
     });
   }
   showDefaultHint();

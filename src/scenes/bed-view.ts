@@ -72,14 +72,14 @@ export class BedView {
   }
 
   private buildReadyTag(): void {
-    // Tag widens to fit the 6-char "READY!" in the pixel font (24 + 4 padding).
+    // Tag fits 6-char "READY!" at the 5×7 font (36 + 4 padding = 40 wide).
     const tagW = measureTextWidth('READY!') + 4;
     const bg = new Graphics();
-    bg.rect(-2, -7, tagW, 7).fill(DAWN.accent);
+    bg.rect(-2, -10, tagW, 9).fill(DAWN.accent);
     this.readyTag.addChild(bg);
 
     const text = new Graphics();
-    drawPixelText(text, 'READY!', 0, -6, DAWN.ink);
+    drawPixelText(text, 'READY!', 0, -9, DAWN.ink);
     this.readyTag.addChild(text);
     this.readyTag.visible = false;
   }
@@ -204,7 +204,7 @@ export class BedView {
       drawSprite(crystal, '.y.\nyyy\n.y.', 5, 4);
       loot.addChild(crystal);
       const label = new Graphics();
-      drawPixelText(label, '+1', 9, 4, DAWN.accent);
+      drawPixelText(label, '+1', 10, 3, DAWN.accent);
       loot.addChild(label);
       loot.y = dy;
       loot.alpha = 1 - Math.max(0, t - 0.7) / 0.3;

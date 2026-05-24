@@ -1,9 +1,17 @@
 import { Container, Graphics } from 'pixi.js';
-import { GLYPH_ADVANCE, GLYPH_HEIGHT, GLYPHS, glyphForChar } from '../sprites/font';
+import {
+  GLYPH_ADVANCE,
+  GLYPH_HEIGHT,
+  GLYPHS,
+  LINE_HEIGHT,
+  glyphForChar,
+} from '../sprites/font';
 
 // Render a string into a Graphics by emitting one 1×1 rect per filled pixel.
 // All coords stay on the integer grid so the result reads sharp at any
-// integer stage scale. Returns the total width drawn (in logical pixels).
+// integer stage scale. Input is uppercased before lookup — the font is
+// uppercase-only, so any lowercase text becomes its uppercase equivalent.
+// Returns the total width drawn (in logical pixels).
 export function drawPixelText(
   g: Graphics,
   text: string,
@@ -13,7 +21,8 @@ export function drawPixelText(
 ): number {
   let cx = Math.round(x);
   const cy = Math.round(y);
-  for (const ch of text) {
+  const upper = text.toUpperCase();
+  for (const ch of upper) {
     const glyph = GLYPHS[ch] ?? glyphForChar('?');
     const rows = glyph.split('\n');
     for (let ry = 0; ry < rows.length; ry++) {
@@ -33,6 +42,7 @@ export function measureTextWidth(text: string): number {
 }
 
 export const TEXT_HEIGHT = GLYPH_HEIGHT;
+export const TEXT_LINE_HEIGHT = LINE_HEIGHT;
 
 // Stateful text label — clears + rebuilds the graphics only when text or
 // color changes. Use this for HUD/dialog fields that swap content over time.

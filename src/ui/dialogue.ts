@@ -11,6 +11,10 @@ const BOX_Y = H - 24;
 
 // The bottom 22-px panel renders either MIRA's scripted hint OR the 10-slot
 // seed picker. Both modes share the same inked box so the UI never reflows.
+//
+// Copy is shorter than the design prototype's lowercase JetBrains Mono lines
+// — the 5×7 pixel font trades verbosity for crispness. Two lines of 7-tall
+// text fit comfortably in the 22-px box with a 9-px line height.
 export class DialoguePanel {
   readonly root = new Container();
   onSeedSelected: ((species: PlantId) => void) | null = null;
@@ -19,7 +23,7 @@ export class DialoguePanel {
   private hintLayer = new Container();
   private pickerLayer = new Container();
 
-  private line1 = new PixelLabel(DAWN.light);
+  private line1 = new PixelLabel(DAWN.accent);
   private line2Press = new PixelLabel(DAWN.light);
   private line2Key = new PixelLabel(DAWN.accent);
   private line2Tail = new PixelLabel(DAWN.light);
@@ -42,7 +46,9 @@ export class DialoguePanel {
   }
 
   private buildHintLayer(): void {
-    // Portrait frame + bust.
+    // Portrait frame + bust — character identification. The MIRA name label
+    // was dropped after it overlapped the headline; the portrait does the
+    // identifying and the panel reads cleaner without the redundant text.
     const frame = new Graphics();
     frame
       .rect(4, BOX_Y + 2, 18, 18)
@@ -54,30 +60,22 @@ export class DialoguePanel {
     drawSprite(portrait, SPR_BLOB_PORTRAIT, 5, BOX_Y + 3);
     this.hintLayer.addChild(portrait);
 
-    // "MIRA" label — static, drawn straight to a graphics.
-    const nameG = new Graphics();
-    drawPixelText(nameG, 'MIRA', 26, BOX_Y + 4, DAWN.accent);
-    this.hintLayer.addChild(nameG);
-
-    // Three dynamic lines: line1 is the main hint; line2 is split into
-    // press/key/tail so the keyboard letter can be colored differently.
+    // Two text rows: headline (line1) at y=BOX_Y+4, action below at +13.
+    // 7-tall font × 2 + 2-px gap = 16 px, sits inside the 22-px box with
+    // 3-px top padding and 3-px bottom padding.
     this.line1.root.x = 26;
-    this.line1.root.y = BOX_Y + 11;
+    this.line1.root.y = BOX_Y + 4;
     this.hintLayer.addChild(this.line1.root);
 
-    this.line2Press.root.x = 26;
-    this.line2Press.root.y = BOX_Y + 17;
+    this.line2Press.root.y = BOX_Y + 13;
     this.hintLayer.addChild(this.line2Press.root);
-
-    this.line2Key.root.y = BOX_Y + 17;
+    this.line2Key.root.y = BOX_Y + 13;
     this.hintLayer.addChild(this.line2Key.root);
-
-    this.line2Tail.root.y = BOX_Y + 17;
+    this.line2Tail.root.y = BOX_Y + 13;
     this.hintLayer.addChild(this.line2Tail.root);
 
-    // Blinking next-arrow ▶ in the bottom-right corner.
     this.cursor = new Graphics();
-    drawPixelText(this.cursor, '▶', W - 8, BOX_Y + 17, DAWN.accent);
+    drawPixelText(this.cursor, '▶', W - 10, BOX_Y + 13, DAWN.accent);
     this.hintLayer.addChild(this.cursor);
   }
 
@@ -91,37 +89,32 @@ export class DialoguePanel {
     this.pickerLayer.addChild(cancelBg);
 
     const titleG = new Graphics();
-    drawPixelText(titleG, 'CHOOSE A SEED', 4, BOX_Y + 3, DAWN.accent);
+    drawPixelText(titleG, 'PICK SEED', 4, BOX_Y + 3, DAWN.accent);
     this.pickerLayer.addChild(titleG);
 
-    const hintG = new Graphics();
-    drawPixelText(hintG, 'tap to plant · elsewhere cancels', 4, BOX_Y + 9, DAWN.light);
-    this.pickerLayer.addChild(hintG);
-
-    // 10 species across the panel width, evenly spaced.
+    // 10 species across the panel width.
     const speciesList = Object.keys(ALL_PLANTS) as PlantId[];
     const slotW = 17;
     const gap = 1.5;
     speciesList.forEach((species, i) => {
       const slotX = 4 + i * (slotW + gap);
-      const slotY = BOX_Y + 14;
+      const slotY = BOX_Y + 12;
 
       const slot = new Container();
       const bg = new Graphics();
-      bg.rect(slotX, slotY, slotW, 9).fill(DAWN.primary);
+      bg.rect(slotX, slotY, slotW, 10).fill(DAWN.primary);
       slot.addChild(bg);
 
-      // Species icon scaled to fit the slot.
       const icon = new Graphics();
       drawSprite(icon, ALL_PLANTS[species]);
       icon.pivot.set(7, 7);
-      icon.position.set(slotX + slotW / 2, slotY + 4.5);
-      icon.scale.set(0.55);
+      icon.position.set(slotX + slotW / 2, slotY + 5);
+      icon.scale.set(0.62);
       slot.addChild(icon);
 
       slot.eventMode = 'static';
       slot.cursor = 'pointer';
-      slot.hitArea = new Rectangle(slotX, slotY, slotW, 9);
+      slot.hitArea = new Rectangle(slotX, slotY, slotW, 10);
       slot.on('pointertap', (e) => {
         e.stopPropagation();
         this.onSeedSelected?.(species);
@@ -131,23 +124,33 @@ export class DialoguePanel {
     });
   }
 
-  showHint(line1: string, line2?: { press: string; key: string; tail: string }): void {
+  // Single-line hint. If `action` is given, it appears on its own line below
+  // with the key letter colored — e.g. ("PRISM-THORN", { press: "(", key: "A", tail: ") HARVEST" }).
+  showHint(headline: string, action?: { press: string; key: string; tail: string }): void {
     this.hintLayer.visible = true;
     this.pickerLayer.visible = false;
-    this.line1.setText(line1);
-    if (line2) {
-      this.line2Press.setText(line2.press);
-      this.line2Press.root.visible = true;
-      this.line2Key.setText(line2.key);
-      // Position the key 2 px after the press text ends.
-      this.line2Key.root.x = 26 + measureTextWidth(line2.press) + (line2.press ? 2 : 0);
-      this.line2Key.root.visible = !!line2.key;
-      this.line2Tail.setText(line2.tail);
+    this.line1.setText(headline);
+    if (action) {
+      // Headline stays at row 1, action below it at row 2.
+      this.line1.root.y = BOX_Y + 4;
+
+      this.line2Press.setText(action.press);
+      this.line2Press.root.x = 26;
+      this.line2Press.root.visible = !!action.press;
+
+      this.line2Key.setText(action.key);
+      this.line2Key.root.x = 26 + measureTextWidth(action.press) + (action.press ? 2 : 0);
+      this.line2Key.root.visible = !!action.key;
+
+      this.line2Tail.setText(action.tail);
       this.line2Tail.root.x =
-        this.line2Key.root.x + measureTextWidth(line2.key) + (line2.key ? 2 : 0);
-      this.line2Tail.root.visible = !!line2.tail;
+        this.line2Key.root.x + measureTextWidth(action.key) + (action.key ? 2 : 0);
+      this.line2Tail.root.visible = !!action.tail;
+
       this.cursor.visible = true;
     } else {
+      // No action — center the headline vertically inside the box.
+      this.line1.root.y = BOX_Y + 8;
       this.line2Press.root.visible = false;
       this.line2Key.root.visible = false;
       this.line2Tail.root.visible = false;
