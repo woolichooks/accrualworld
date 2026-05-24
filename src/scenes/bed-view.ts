@@ -1,5 +1,6 @@
-import { Container, Graphics, Rectangle, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Rectangle } from 'pixi.js';
 import { DAWN } from '../engine/palette';
+import { drawPixelText, measureTextWidth } from '../engine/pixel-text';
 import { drawSprite } from '../engine/sprite';
 import { ALL_PLANTS } from '../sprites/plants';
 import type { Bed, Stage } from '../state/types';
@@ -71,20 +72,15 @@ export class BedView {
   }
 
   private buildReadyTag(): void {
+    // Tag widens to fit the 6-char "READY!" in the pixel font (24 + 4 padding).
+    const tagW = measureTextWidth('READY!') + 4;
     const bg = new Graphics();
-    bg.rect(-2, -6, 18, 6).fill(DAWN.accent);
+    bg.rect(-2, -7, tagW, 7).fill(DAWN.accent);
     this.readyTag.addChild(bg);
 
-    const style = new TextStyle({
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: 4,
-      fill: DAWN.ink,
-      letterSpacing: 0,
-    });
-    const label = new Text({ text: 'READY!', style });
-    label.x = -1.5;
-    label.y = -6.5;
-    this.readyTag.addChild(label);
+    const text = new Graphics();
+    drawPixelText(text, 'READY!', 0, -6, DAWN.ink);
+    this.readyTag.addChild(text);
     this.readyTag.visible = false;
   }
 
@@ -207,15 +203,8 @@ export class BedView {
       const crystal = new Graphics();
       drawSprite(crystal, '.y.\nyyy\n.y.', 5, 4);
       loot.addChild(crystal);
-      const style = new TextStyle({
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: 4,
-        fill: DAWN.accent,
-        letterSpacing: 0,
-      });
-      const label = new Text({ text: '+1', style });
-      label.x = 9;
-      label.y = 2.5;
+      const label = new Graphics();
+      drawPixelText(label, '+1', 9, 4, DAWN.accent);
       loot.addChild(label);
       loot.y = dy;
       loot.alpha = 1 - Math.max(0, t - 0.7) / 0.3;

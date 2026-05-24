@@ -1,35 +1,26 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import { DAWN, MOON_COLOR, SUN2_COLOR, SUN_COLOR } from '../engine/palette';
+import { PixelLabel } from '../engine/pixel-text';
 import { drawSprite } from '../engine/sprite';
 import { HEART_EMPTY, HEART_FULL } from '../sprites/tiles';
 import type { SolTime } from '../engine/time';
 
 const W = 192;
 
-function pixelText(content: string, color: number, size = 4): Text {
-  const style = new TextStyle({
-    fontFamily: '"JetBrains Mono", monospace',
-    fontSize: size,
-    fill: color,
-    letterSpacing: 0,
-  });
-  return new Text({ text: content, style });
-}
-
-// Top-bar HUD: hearts, animated phase label, clock. The bottom-of-screen
-// dialogue + seed picker live in DialoguePanel.
+// Top-bar HUD: hearts, phase label, clock. The bottom-of-screen dialogue +
+// seed picker live in DialoguePanel.
 export class HUD {
   readonly root = new Container();
 
-  private phaseLabel: Text;
-  private clockLabel: Text;
+  private phaseLabel = new PixelLabel(DAWN.light, 'dawn · sol 47');
+  private clockLabel = new PixelLabel(DAWN.accent, '04:12');
   private clockSunIcon = new Graphics();
   private clockMoonIcon = new Graphics();
 
   constructor() {
     this.buildHearts();
-    this.phaseLabel = this.buildPhaseLabel();
-    this.clockLabel = this.buildClock();
+    this.buildPhaseLabel();
+    this.buildClock();
   }
 
   private buildHearts(): void {
@@ -46,41 +37,38 @@ export class HUD {
     });
   }
 
-  private buildPhaseLabel(): Text {
+  private buildPhaseLabel(): void {
     const bg = new Graphics();
     bg.rect(W / 2 - 30, 2, 60, 7).fill(DAWN.ink);
     this.root.addChild(bg);
 
+    // Animated little arrow that nudges up by 1 px on a 0.9s loop.
     const arrow = new Graphics();
-    arrow.rect(W / 2 - 27, 4.4, 3, 1).rect(W / 2 - 26, 5.4, 1, 1).fill(DAWN.accent);
+    arrow.rect(W / 2 - 27, 4, 3, 1).rect(W / 2 - 26, 5, 1, 1).fill(DAWN.accent);
     this.root.addChild(arrow);
 
-    const label = pixelText('dawn · sol 47', DAWN.light, 4);
-    label.x = W / 2 - 22;
-    label.y = 1.6;
-    this.root.addChild(label);
-    return label;
+    this.phaseLabel.root.x = W / 2 - 22;
+    this.phaseLabel.root.y = 3;
+    this.root.addChild(this.phaseLabel.root);
   }
 
-  private buildClock(): Text {
+  private buildClock(): void {
     const bg = new Graphics();
     bg.rect(W - 50, 2, 48, 7).fill(DAWN.ink);
     this.root.addChild(bg);
 
-    const label = pixelText('04:12', DAWN.accent, 4);
-    label.x = W - 47;
-    label.y = 1.6;
-    this.root.addChild(label);
+    this.clockLabel.root.x = W - 47;
+    this.clockLabel.root.y = 3;
+    this.root.addChild(this.clockLabel.root);
 
     this.clockSunIcon.rect(W - 22, 3, 5, 3).fill(SUN_COLOR);
     this.clockMoonIcon.rect(W - 12, 3, 3, 3).fill(SUN2_COLOR);
     this.root.addChild(this.clockSunIcon, this.clockMoonIcon);
-    return label;
   }
 
   update(time: SolTime): void {
-    this.phaseLabel.text = `${time.named} · sol ${time.sol}`;
-    this.clockLabel.text = time.clock;
+    this.phaseLabel.setText(`${time.named} · sol ${time.sol}`);
+    this.clockLabel.setText(time.clock);
 
     if (time.named === 'night') {
       this.clockSunIcon.clear().rect(W - 22, 3, 5, 3).fill(MOON_COLOR);
