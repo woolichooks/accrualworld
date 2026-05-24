@@ -31,8 +31,9 @@ npm run build    # typecheck + production bundle into dist/
 - [x] **M1 · Foundation** — palette + role-indexed sprite renderer, all 10
       plants + blob on the G1 Dawn screen, 32s day/night cycle, plant sway,
       blob breathe + blink, HUD (hearts, phase label, clock).
-- [ ] **M2 · Core loop** — sol-time plant growth, watering, harvest pop into
-      inventory, tap-to-plant.
+- [x] **M2 · Core loop** — sol-time plant growth, tap-to-harvest with BURST +
+      LOOT one-shots, tap-to-plant via a 10-slot seed picker, inventory state,
+      MIRA dialogue reflects the current action. (Watering deferred to M3.)
 - [ ] **M3 · Survival layer** — AIR / SUIT / HP meters, hazmat-suit swap,
       bunker safe-zone.
 - [ ] **M4 · Crafting + potions** — cauldron scene, the 8 canonical recipes.
@@ -46,9 +47,10 @@ npm run build    # typecheck + production bundle into dist/
 src/
   engine/    palette, sol-time, sprite renderer
   sprites/   ASCII pixel definitions (plants, blob, tiles)
-  scenes/    garden scene composition + per-frame update
-  ui/        HUD overlays
-  main.ts    Pixi bootstrap, integer scale, ticker
+  state/     garden state (beds + inventory), bed roster, stage rules
+  scenes/    garden scene composition, per-bed view + FX
+  ui/        top HUD + bottom dialogue/seed-picker
+  main.ts    Pixi bootstrap, input wiring, ticker
 docs/
   design-handoff/   canonical spec — palette, sprites, screens, recipes
 ```
