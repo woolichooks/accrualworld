@@ -2,13 +2,15 @@ import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { DAWN, MOON_COLOR, SUN2_COLOR, SUN_COLOR } from '../engine/palette';
 import { drawSprite } from '../engine/sprite';
 import { HEART_EMPTY, HEART_FULL } from '../sprites/tiles';
+import { SPR_BLOB_PORTRAIT } from '../sprites/blob';
 import type { SolTime } from '../engine/time';
 
 const W = 192;
+const H = 116;
 
-// Pixel text is rendered with the same JetBrains Mono pulled from Google Fonts
-// in index.html. The 3.6 px size in the prototype maps to 4 px here so it
-// stays readable after the integer scale-up.
+// Pixel text — JetBrains Mono served from Google Fonts (see index.html).
+// 3.6 px in the prototype maps to 4 px here so it stays readable after the
+// integer scale-up.
 function pixelText(content: string, color: number, size = 4): Text {
   const style = new TextStyle({
     fontFamily: '"JetBrains Mono", monospace',
@@ -26,11 +28,15 @@ export class HUD {
   private clockLabel: Text;
   private clockSunIcon = new Graphics();
   private clockMoonIcon = new Graphics();
+  private cursor = new Graphics();
+  private cursorState = true;
+  private cursorTimer = 0;
 
   constructor() {
     this.buildHearts();
     this.phaseLabel = this.buildPhaseLabel();
     this.clockLabel = this.buildClock();
+    this.buildDialogue();
   }
 
   private buildHearts(): void {
@@ -52,7 +58,6 @@ export class HUD {
     bg.rect(W / 2 - 30, 2, 60, 7).fill(DAWN.ink);
     this.root.addChild(bg);
 
-    // Animated little arrow that nudges up by 1 px on a 0.9s loop.
     const arrow = new Graphics();
     arrow.rect(W / 2 - 27, 4.4, 3, 1).rect(W / 2 - 26, 5.4, 1, 1).fill(DAWN.accent);
     this.root.addChild(arrow);
@@ -80,17 +85,74 @@ export class HUD {
     return label;
   }
 
+  // Bottom-of-screen dialogue box with the MIRA portrait + scripted hint.
+  // Matches docs/design-handoff/src/art-pocket.jsx layout: a 188×22 inked
+  // rect at (2, H-24) with an 18×18 portrait, name, and two text lines.
+  private buildDialogue(): void {
+    const box = new Graphics();
+    box.rect(2, H - 24, W - 4, 22).fill(DAWN.ink);
+    this.root.addChild(box);
+
+    // Portrait frame.
+    const frame = new Graphics();
+    frame.rect(4, H - 22, 18, 18).fill(DAWN.ink).stroke({ color: DAWN.light, width: 0.4 });
+    this.root.addChild(frame);
+
+    // Portrait sprite — the 11×10 blob bust.
+    const portrait = new Graphics();
+    drawSprite(portrait, SPR_BLOB_PORTRAIT, 5, H - 21);
+    this.root.addChild(portrait);
+
+    const name = pixelText('MIRA', DAWN.accent, 4);
+    name.x = 26;
+    name.y = H - 18;
+    this.root.addChild(name);
+
+    const line1 = pixelText('the prism-thorn is ready to harvest', DAWN.light, 3.5);
+    line1.x = 26;
+    line1.y = H - 12;
+    this.root.addChild(line1);
+
+    const press = pixelText('- press', DAWN.light, 3.5);
+    press.x = 26;
+    press.y = H - 7;
+    this.root.addChild(press);
+
+    const a = pixelText('A', DAWN.accent, 3.5);
+    a.x = 46;
+    a.y = H - 7;
+    this.root.addChild(a);
+
+    const tail = pixelText('to take a clipping.', DAWN.light, 3.5);
+    tail.x = 50;
+    tail.y = H - 7;
+    this.root.addChild(tail);
+
+    // Blinking next-arrow ▶ in the bottom-right corner of the box.
+    this.cursor.rect(W - 8, H - 7, 3, 1).rect(W - 7, H - 6, 1, 1).fill(DAWN.accent);
+    this.root.addChild(this.cursor);
+  }
+
   update(time: SolTime): void {
     this.phaseLabel.text = `${time.named} · sol ${time.sol}`;
     this.clockLabel.text = time.clock;
 
-    // At night, the clock icons swap to the moon.
+    // Clock icons swap to the moon at night.
     if (time.named === 'night') {
       this.clockSunIcon.clear().rect(W - 22, 3, 5, 3).fill(MOON_COLOR);
       this.clockMoonIcon.clear().rect(W - 12, 3, 3, 3).fill({ color: MOON_COLOR, alpha: 0.5 });
     } else {
       this.clockSunIcon.clear().rect(W - 22, 3, 5, 3).fill(SUN_COLOR);
       this.clockMoonIcon.clear().rect(W - 12, 3, 3, 3).fill(SUN2_COLOR);
+    }
+
+    // Cursor blink — 1s loop, 50/50 on/off. Done in update so the binary
+    // toggle stays aligned with the engine clock, not a CSS timeline.
+    this.cursorTimer += 1 / 60;
+    if (this.cursorTimer >= 0.5) {
+      this.cursorTimer = 0;
+      this.cursorState = !this.cursorState;
+      this.cursor.alpha = this.cursorState ? 1 : 0;
     }
   }
 }

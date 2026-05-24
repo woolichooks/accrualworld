@@ -1,8 +1,11 @@
-# Accrualworld
+# Accrual World
 
 A cozy survival garden simulator on a hostile exoplanet. You're a stranded
 auditor; the planet's old terraforming AI only releases seeds, soil nutrients,
 and potion recipes to those who can pass its FASB / ASC compliance checks.
+
+The game is presented inside a handheld "Pocket Garden" console — the in-fiction
+device the planet hands you to manage your plot.
 
 Built from the **Pocket Garden** design handoff — see
 [`docs/design-handoff/`](./docs/design-handoff/) for the canonical spec

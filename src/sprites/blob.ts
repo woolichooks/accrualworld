@@ -58,6 +58,20 @@ export const SPR_BLOB_MOUTH = `
 ................
 `;
 
+// 11×10 blob bust used in the dialogue-box portrait frame.
+export const SPR_BLOB_PORTRAIT = `
+...bbbb....
+..bllllbo..
+.blllllbo..
+.bllblllbo.
+bllllblllbo
+blooolloolo
+bllllllllbo
+.bllllllbo.
+..ooobbbo..
+....oboo...
+`;
+
 export const SPR_CAN_HELD = `
 .....rrrrrr.
 ....rrrrrrro
