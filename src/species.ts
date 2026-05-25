@@ -108,7 +108,7 @@ export const SPECIES_DATA: Record<SpeciesId, Species> = {
   sunflower: { id: 'sunflower', name: 'SUN',   secondsPerStage: 10, yieldPerHarvest: 1, toneIdx: 3 },
   basil:     { id: 'basil',     name: 'BASIL', secondsPerStage: 9,  yieldPerHarvest: 2, toneIdx: 2 },
   chamomile: { id: 'chamomile', name: 'CHAM',  secondsPerStage: 12, yieldPerHarvest: 1, toneIdx: 3 },
-  potato:    { id: 'potato',    name: 'POT',   secondsPerStage: 14, yieldPerHarvest: 3, toneIdx: 2 },
+  potato:    { id: 'potato',    name: 'POTA',  secondsPerStage: 14, yieldPerHarvest: 3, toneIdx: 2 },
   aloe:      { id: 'aloe',      name: 'ALOE',  secondsPerStage: 12, yieldPerHarvest: 1, toneIdx: 2 },
   garlic:    { id: 'garlic',    name: 'GARL',  secondsPerStage: 10, yieldPerHarvest: 2, toneIdx: 3 },
   lavender:  { id: 'lavender',  name: 'LAV',   secondsPerStage: 11, yieldPerHarvest: 1, toneIdx: 3 },
