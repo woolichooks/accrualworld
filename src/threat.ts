@@ -11,6 +11,7 @@ import { drawText, textWidth } from './font';
 import { drawText5, LINE5_H, textWidth5 } from './font5';
 import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
+import { loadMeta, saveMeta } from './meta';
 import { saveRun } from './save';
 import type { Scene } from './scene';
 import { mutateGardenPlants } from './species';
@@ -27,13 +28,15 @@ export type ThreatId =
   | 'double_strike'
   | 'plant_blight';
 
-interface ThreatDef {
+export interface ThreatDef {
   id: ThreatId;
   label: string;
   // applyTo gets both Shelter and the full RunState so threats with
   // side effects on plants (e.g. blight) can reach the tiles.
   applyTo(state: RunState): void;
   damageMsg: string;
+  // One-line plain-English description shown in the Codex.
+  description: string;
 }
 
 const sub = (n: number, d: number) => Math.max(0, n - d);
@@ -42,26 +45,28 @@ export const THREATS: ThreatDef[] = [
   {
     id: 'meteor_strike',
     label: 'METEOR STRIKE',
+    description: 'IMPACT FRACTURES THE HULL. -2 HULL.',
     applyTo: (s) => { s.shelter.hull = sub(s.shelter.hull, 2); },
     damageMsg: '-2 HULL',
   },
   {
     id: 'acrid_fog',
     label: 'ACRID FOG',
+    description: 'CORROSIVE AIR LEAKS THROUGH SEALS. -2 OXY.',
     applyTo: (s) => { s.shelter.oxygen = sub(s.shelter.oxygen, 2); },
     damageMsg: '-2 OXYGEN',
   },
   {
     id: 'power_surge',
     label: 'POWER SURGE',
+    description: 'ATMOSPHERIC ARC TRIPS THE GRID. -2 PWR.',
     applyTo: (s) => { s.shelter.power = sub(s.shelter.power, 2); },
     damageMsg: '-2 POWER',
   },
-  // Hits all three stats for 1. Painful if you're already topping
-  // multiple bars; otherwise survivable.
   {
     id: 'double_strike',
     label: 'STORM CONVERGENCE',
+    description: 'EVERY GAUGE TICKS DOWN. -1 EACH STAT.',
     applyTo: (s) => {
       s.shelter.hull = sub(s.shelter.hull, 1);
       s.shelter.oxygen = sub(s.shelter.oxygen, 1);
@@ -69,12 +74,10 @@ export const THREATS: ThreatDef[] = [
     },
     damageMsg: '-1 HULL / OXY / PWR',
   },
-  // Oxygen damage plus a fungal sweep that regresses some growing
-  // plants by a stage. Each non-mature plant rolls 35% independently;
-  // stage 1 plants don't regress below stage 1 (they don't die).
   {
     id: 'plant_blight',
     label: 'PLANT BLIGHT',
+    description: 'FUNGAL BLOOM REGRESSES SOME PLANTS. -1 OXY.',
     applyTo: (s) => {
       s.shelter.oxygen = sub(s.shelter.oxygen, 1);
       for (const tile of s.tiles) {
@@ -92,6 +95,10 @@ export const THREATS: ThreatDef[] = [
 
 export function pickThreat(): ThreatDef {
   return THREATS[Math.floor(Math.random() * THREATS.length)];
+}
+
+export function threatById(id: string): ThreatDef | undefined {
+  return THREATS.find((t) => t.id === id);
 }
 
 export class ThreatScene implements Scene {
@@ -138,6 +145,12 @@ export class ThreatScene implements Scene {
       // Plants adapt under stress — some mutate in response.
       this.mutatedCount = mutateGardenPlants(this.state, 0.35);
       saveRun(this.state);
+      // Log a first encounter for the Codex.
+      const meta = loadMeta();
+      if (!meta.encounteredThreats.includes(this.threat.id)) {
+        meta.encounteredThreats.push(this.threat.id);
+        saveMeta(meta);
+      }
     }
 
     if (this.t >= this.duration) {

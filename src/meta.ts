@@ -17,6 +17,9 @@ export interface MetaState {
   seedsEarned: Record<SpeciesId, number>;
   // Wonders the player has witnessed at least once, by id.
   witnessedWonders: string[];
+  // Threats the player has survived (or at least seen the cinematic of)
+  // at least once, by threat id. Drives the codex Threats tab unlocks.
+  encounteredThreats: string[];
   // Brewing recipes the player has successfully crafted at least once,
   // by recipe id. Drives the "???" vs full-name reveal on the bench.
   discoveredRecipes: string[];
@@ -32,6 +35,7 @@ export function newMeta(): MetaState {
       chamomile: 0, potato: 0, aloe: 0, garlic: 0, lavender: 0,
     },
     witnessedWonders: [],
+    encounteredThreats: [],
     discoveredRecipes: [],
   };
 }
@@ -53,6 +57,7 @@ export function loadMeta(): MetaState {
     const newSpecies: SpeciesId[] = ['chamomile', 'potato', 'aloe', 'garlic', 'lavender'];
     for (const sp of newSpecies) data.seedsEarned[sp] ??= 0;
     data.witnessedWonders ??= [];
+    data.encounteredThreats ??= [];
     data.discoveredRecipes ??= [];
     return data;
   } catch {

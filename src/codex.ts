@@ -16,6 +16,7 @@ import { loadMeta } from './meta';
 import type { Scene } from './scene';
 import { templateById, TEMPLATES } from './puzzles';
 import { wonderById, WONDERS } from './wonder';
+import { THREATS } from './threat';
 import { RECIPES } from './recipes';
 import { MUTATIONS } from './species';
 import { wrap } from './text-wrap';
@@ -31,12 +32,13 @@ const CONTENT_TOP = 26;
 const CONTENT_BOTTOM = SCREEN_H - 12;
 const ENTRY_SPACER = 4;
 
-type Tab = 'std' | 'wnd' | 'rcp' | 'mut' | 'inf';
+type Tab = 'std' | 'wnd' | 'thr' | 'rcp' | 'mut' | 'inf';
 
-const TAB_ORDER: Tab[] = ['std', 'wnd', 'rcp', 'mut', 'inf'];
+const TAB_ORDER: Tab[] = ['std', 'wnd', 'thr', 'rcp', 'mut', 'inf'];
 const TAB_LABEL: Record<Tab, string> = {
   std: 'STD',
   wnd: 'WND',
+  thr: 'THR',
   rcp: 'RCP',
   mut: 'MUT',
   inf: 'INF',
@@ -44,6 +46,7 @@ const TAB_LABEL: Record<Tab, string> = {
 const TAB_HEADER: Record<Tab, string> = {
   std: 'STANDARDS',
   wnd: 'WONDERS',
+  thr: 'THREATS',
   rcp: 'RECIPES',
   mut: 'MUTATIONS',
   inf: 'RUN STATS',
@@ -189,6 +192,25 @@ export class CodexScene implements Scene {
         };
       });
     }
+    if (tab === 'thr') {
+      return THREATS.map((t) => {
+        const seen = meta.encounteredThreats.includes(t.id);
+        return {
+          title: t.label,
+          detail: seen ? `${t.damageMsg}` : 'NOT YET ENCOUNTERED',
+          locked: !seen,
+          full: seen
+            ? [
+                t.description,
+                '',
+                `EFFECT: ${t.damageMsg}`,
+                '',
+                'STRIKES AT NIGHT. SLEEP AVOIDS IT.',
+              ]
+            : undefined,
+        };
+      });
+    }
     if (tab === 'rcp') {
       return RECIPES.map((r) => {
         const seen = meta.discoveredRecipes.includes(r.id);
@@ -235,6 +257,7 @@ export class CodexScene implements Scene {
       { title: 'LEDGER MARKS', detail: `305:${lm['305']} 330:${lm['330']} 360:${lm['360']}`, locked: false },
       { title: 'STANDARDS LOGGED', detail: `${meta.codexSeen.length} / ${TEMPLATES.length}`, locked: false },
       { title: 'WONDERS WITNESSED', detail: `${meta.witnessedWonders.length} / ${WONDERS.length}`, locked: false },
+      { title: 'THREATS ENCOUNTERED', detail: `${meta.encounteredThreats.length} / ${THREATS.length}`, locked: false },
       { title: 'RECIPES BREWED', detail: `${meta.discoveredRecipes.length} / ${RECIPES.length}`, locked: false },
     ];
   }
