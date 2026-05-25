@@ -5,13 +5,22 @@ export type Button = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'start' | 's
 
 const BUTTONS: Button[] = ['up', 'down', 'left', 'right', 'a', 'b', 'start', 'select'];
 
+// Keyboard mapping:
+//   Arrow keys      -> D-pad
+//   A / Z / J       -> A button   (A is the natural choice; Z/J kept
+//                                  as alternates for muscle memory)
+//   B / X / K       -> B button
+//   Enter           -> Start
+//   Shift           -> Select
+// WASD movement is intentionally dropped because A/D would collide
+// with the A button. W and S are kept for vertical scrolling only.
 const KEY_MAP: Record<string, Button> = {
-  ArrowUp: 'up',     w: 'up',     W: 'up',
-  ArrowDown: 'down', s: 'down',   S: 'down',
-  ArrowLeft: 'left', a: 'left',   A: 'left',
-  ArrowRight: 'right', d: 'right', D: 'right',
-  z: 'a', Z: 'a',  j: 'a', J: 'a',
-  x: 'b', X: 'b',  k: 'b', K: 'b',
+  ArrowUp: 'up',       w: 'up',   W: 'up',
+  ArrowDown: 'down',   s: 'down', S: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  a: 'a', A: 'a', z: 'a', Z: 'a', j: 'a', J: 'a',
+  b: 'b', B: 'b', x: 'b', X: 'b', k: 'b', K: 'b',
   Enter: 'start',
   Shift: 'select',
 };
