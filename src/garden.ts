@@ -238,12 +238,32 @@ export class GardenScene implements Scene {
     } else {
       b = 'B:--';
     }
-    const y = SCREEN_H - 8;
+
+    // Two-line footer: action prompts on top, helper hints below.
+    const y1 = SCREEN_H - 16;
+    const y2 = SCREEN_H - 7;
     ctx.fillStyle = p[0];
-    ctx.fillRect(0, y - 2, SCREEN_W, 10);
-    drawText(ctx, a, 2, y, p[3]);
-    const bw = textWidth(b);
-    drawText(ctx, b, SCREEN_W - 2 - bw, y, p[3]);
+    ctx.fillRect(0, y1 - 2, SCREEN_W, 18);
+
+    drawText(ctx, a, 2, y1, p[3]);
+    drawText(ctx, b, SCREEN_W - 2 - textWidth(b), y1, p[3]);
+
+    // Helper hints. SELECT hint is always shown. When the currently
+    // selected seed is out, the START hint blinks to draw the eye
+    // toward the Vault.
+    const selHint = 'SEL:CYCLE';
+    drawText(ctx, selHint, 2, y2, p[2]);
+
+    const outOfSeeds = this.state.inventory.seeds[this.state.selectedSeed] === 0;
+    if (outOfSeeds) {
+      const startHint = 'START:GET SEEDS';
+      const blink = Math.floor(this.blink * 2) % 2 === 0;
+      const color = blink ? p[3] : p[2];
+      drawText(ctx, startHint, SCREEN_W - 2 - textWidth(startHint), y2, color);
+    } else {
+      const startHint = 'START:VAULT';
+      drawText(ctx, startHint, SCREEN_W - 2 - textWidth(startHint), y2, p[2]);
+    }
   }
 
   private drawToast(ctx: CanvasRenderingContext2D, p: Palette): void {

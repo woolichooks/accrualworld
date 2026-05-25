@@ -140,15 +140,24 @@ export class PuzzleScene implements Scene {
     ctx.fillRect(0, 10, SCREEN_W, 1);
     drawText(ctx, this.puzzle.header, 3, 3, p[3]);
 
-    // Footer bar.
+    if (this.phase === 'question') this.drawQuestion(ctx, p);
+    else if (this.phase === 'feedback') this.drawFeedback(ctx, p);
+    else this.drawCodex(ctx, p);
+
+    // Footer drawn LAST so it masks any content that ran long.
+    this.drawFooter(ctx, p);
+  }
+
+  private drawFooter(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.fillStyle = p[1];
     ctx.fillRect(0, SCREEN_H - 10, SCREEN_W, 10);
     ctx.fillStyle = p[3];
     ctx.fillRect(0, SCREEN_H - 10, SCREEN_W, 1);
-
-    if (this.phase === 'question') this.drawQuestion(ctx, p);
-    else if (this.phase === 'feedback') this.drawFeedback(ctx, p);
-    else this.drawCodex(ctx, p);
+    const hint =
+      this.phase === 'question' ? 'A:CONFIRM   B:CANCEL'
+      : this.phase === 'feedback' ? 'B:WHY?   A:CLOSE'
+      : 'A/B: CLOSE';
+    drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[3]);
   }
 
   private drawQuestion(ctx: CanvasRenderingContext2D, p: Palette): void {
@@ -175,9 +184,6 @@ export class PuzzleScene implements Scene {
       }
       y += LINE5_H + 1;
     }
-
-    const hint = 'A:CONFIRM   B:CANCEL';
-    drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[3]);
   }
 
   private drawFeedback(ctx: CanvasRenderingContext2D, p: Palette): void {
@@ -191,13 +197,17 @@ export class PuzzleScene implements Scene {
     }
 
     if (this.wasCorrect) {
-      // Reward summary
+      // Reward summary — wrap so longer reward strings don't overflow.
       const parts = Object.entries(this.puzzle.reward.seeds)
         .filter(([, n]) => n && n > 0)
         .map(([sp, n]) => `+${n} ${sp.toUpperCase()}`);
       if (parts.length) {
         y += 3;
-        drawText5(ctx, 'REWARD: ' + parts.join('  '), 4, y, p[3]);
+        const rewardLines = wrap('REWARD: ' + parts.join('  '), TEXT_MAX_CHARS);
+        for (const ln of rewardLines) {
+          drawText5(ctx, ln, 4, y, p[3]);
+          y += LINE5_H;
+        }
       }
     }
 
