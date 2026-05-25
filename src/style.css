@@ -1,0 +1,231 @@
+/* Handheld pocket-gamer shell.
+   Logical screen is 160x144 (Game Boy native); everything else is
+   bezel chrome drawn in CSS so the game itself stays pixel-pure. */
+
+:root {
+  /* Sickly-green default palette. Index 0 = darkest, 3 = lightest. */
+  --c0: #0b1a10;
+  --c1: #1a3a26;
+  --c2: #4d8a52;
+  --c3: #b8d97a;
+
+  --bezel: #2a2628;
+  --bezel-edge: #15110f;
+  --bezel-light: #3a3436;
+  --screen-frame: #0e0c0b;
+  --led-on: #b53b2a;
+  --led-off: #3a1410;
+  --btn: #6b1f2a;
+  --btn-edge: #2a0a10;
+  --btn-grey: #2f2a2c;
+  --btn-grey-edge: #15110f;
+  --label: #d8c9b0;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #0a0908;
+  color: var(--label);
+  font-family: 'Press Start 2P', ui-monospace, Menlo, Consolas, monospace;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* ---- Handheld bezel ---- */
+.handheld {
+  --w: 360px;
+  width: var(--w);
+  padding: 18px 18px 24px;
+  border-radius: 18px 18px 60px 18px;
+  background:
+    linear-gradient(180deg, var(--bezel-light) 0%, var(--bezel) 8%, var(--bezel) 92%, var(--bezel-edge) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -2px 0 rgba(0,0,0,.4),
+    0 18px 40px rgba(0,0,0,.55);
+  position: relative;
+}
+
+.brand {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--label);
+  opacity: .8;
+  padding: 0 6px 10px;
+}
+.brand .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--led-off);
+  box-shadow: inset 0 0 2px rgba(0,0,0,.6);
+}
+.brand .dot.on {
+  background: var(--led-on);
+  box-shadow: 0 0 6px var(--led-on), inset 0 0 2px rgba(0,0,0,.4);
+}
+
+/* ---- Screen frame ---- */
+.screen-frame {
+  background: var(--screen-frame);
+  padding: 12px;
+  border-radius: 6px 6px 20px 6px;
+  box-shadow:
+    inset 0 2px 0 rgba(0,0,0,.6),
+    inset 0 -1px 0 rgba(255,255,255,.04);
+}
+.screen-label {
+  font-size: 6px;
+  letter-spacing: 2px;
+  color: var(--label);
+  opacity: .55;
+  text-align: center;
+  padding-bottom: 8px;
+}
+
+#screen {
+  display: block;
+  width: 320px;   /* 160 * 2 */
+  height: 288px;  /* 144 * 2 */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: var(--c3);
+  margin: 0 auto;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.04),
+    0 0 0 2px #000;
+}
+
+/* ---- Controls row ---- */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 22px 6px 6px;
+  align-items: center;
+}
+
+.dpad {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  justify-self: start;
+}
+.dpad button {
+  position: absolute;
+  width: 32px; height: 32px;
+  background: linear-gradient(180deg, #3a3436, #1c1819);
+  border: none;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -2px 0 rgba(0,0,0,.5),
+    0 1px 0 var(--bezel-edge);
+  color: var(--label);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0;
+}
+.dpad button:active, .dpad button.pressed {
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.6),
+    inset 0 -1px 0 rgba(255,255,255,.04);
+  transform: translateY(1px);
+}
+.dpad .up    { top: 0;   left: 32px; border-radius: 4px 4px 0 0; }
+.dpad .down  { top: 64px; left: 32px; border-radius: 0 0 4px 4px; }
+.dpad .left  { top: 32px; left: 0;   border-radius: 4px 0 0 4px; }
+.dpad .right { top: 32px; left: 64px; border-radius: 0 4px 4px 0; }
+.dpad .center {
+  position: absolute;
+  top: 32px; left: 32px;
+  width: 32px; height: 32px;
+  background: #1c1819;
+  pointer-events: none;
+}
+
+.ab {
+  display: flex;
+  gap: 14px;
+  justify-self: end;
+  transform: rotate(-18deg);
+  padding-right: 6px;
+}
+.ab button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: radial-gradient(circle at 35% 30%, #a83040 0%, var(--btn) 55%, var(--btn-edge) 100%);
+  color: var(--label);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.12),
+    inset 0 -3px 0 rgba(0,0,0,.45),
+    0 2px 0 var(--bezel-edge);
+}
+.ab button:active, .ab button.pressed {
+  box-shadow:
+    inset 0 3px 6px rgba(0,0,0,.55),
+    inset 0 -1px 0 rgba(255,255,255,.05);
+  transform: translateY(1px);
+}
+
+.startsel {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding-top: 6px;
+}
+.startsel button {
+  background: linear-gradient(180deg, #4a4346, var(--btn-grey));
+  border: none;
+  border-radius: 10px;
+  width: 56px;
+  height: 12px;
+  transform: rotate(-18deg);
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -2px 0 rgba(0,0,0,.45),
+    0 1px 0 var(--btn-grey-edge);
+}
+.startsel button:active, .startsel button.pressed {
+  transform: rotate(-18deg) translateY(1px);
+}
+.startsel .lbl {
+  font-size: 6px;
+  letter-spacing: 1px;
+  color: var(--label);
+  opacity: .7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Tighter layout on small screens */
+@media (max-width: 400px) {
+  .handheld { --w: 320px; }
+  #screen { width: 280px; height: 252px; }
+}
