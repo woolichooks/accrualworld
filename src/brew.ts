@@ -20,6 +20,7 @@ import { saveRun } from './save';
 import type { Scene } from './scene';
 import { drawSeedIcon, SPECIES_DATA } from './species';
 import { matchRecipe } from './recipes';
+import { sfx } from './audio';
 import type { RunState, SpeciesId } from './types';
 
 const SCREEN_W = 160;
@@ -74,6 +75,7 @@ export class BrewBenchScene implements Scene {
     // Need at least one ingredient to attempt a brew.
     if (this.slots.every((s) => s === null)) {
       this.toast = { msg: 'NEED INGREDIENTS', t: 1.6 };
+      sfx.warn();
       return;
     }
     // Tally ingredient demand and verify the player has the leaves.
@@ -85,6 +87,7 @@ export class BrewBenchScene implements Scene {
     for (const k of Object.keys(need) as SpeciesId[]) {
       if (this.state.inventory.harvested[k] < (need[k] ?? 0)) {
         this.toast = { msg: `NOT ENOUGH ${k.toUpperCase()}`, t: 1.6 };
+        sfx.warn();
         return;
       }
     }
@@ -92,6 +95,7 @@ export class BrewBenchScene implements Scene {
     const recipe = matchRecipe(this.slots);
     if (!recipe) {
       this.toast = { msg: 'COMBINATION FAILED', t: 1.6 };
+      sfx.puzzleWrong();
       return;
     }
     // Consume leaves, apply effect, log discovery.
@@ -99,6 +103,7 @@ export class BrewBenchScene implements Scene {
       this.state.inventory.harvested[k] -= need[k] ?? 0;
     }
     const reward = recipe.apply(this.state);
+    sfx.brew();
     saveRun(this.state);
 
     const meta = loadMeta();

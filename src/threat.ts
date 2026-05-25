@@ -13,6 +13,8 @@ import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import { loadMeta, saveMeta } from './meta';
 import { saveRun } from './save';
+import { sfx } from './audio';
+import { startShake } from './shake';
 import type { Scene } from './scene';
 import { mutateGardenPlants } from './species';
 import type { RunState } from './types';
@@ -117,6 +119,8 @@ export class ThreatScene implements Scene {
     this.state = state;
     this.threat = threat;
     this.prev = prev;
+    sfx.threat();
+    startShake(3, 0.6);
   }
 
   paletteName(): PaletteName {
@@ -144,6 +148,8 @@ export class ThreatScene implements Scene {
       this.threat.applyTo(this.state);
       // Plants adapt under stress — some mutate in response.
       this.mutatedCount = mutateGardenPlants(this.state, 0.35);
+      // Punchy hit on the damage moment, separate from the opener sting.
+      startShake(2, 0.3);
       saveRun(this.state);
       // Log a first encounter for the Codex.
       const meta = loadMeta();

@@ -11,6 +11,7 @@ import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import { loadMeta, saveMeta } from './meta';
 import { saveRun } from './save';
+import { sfx } from './audio';
 import type { Scene } from './scene';
 import { mutateGardenPlants } from './species';
 import type { RunState } from './types';
@@ -45,6 +46,7 @@ export class MeteorShowerScene implements Scene {
   constructor(state: RunState, prev: Scene) {
     this.state = state;
     this.prev = prev;
+    sfx.meteor();
   }
 
   paletteName(): PaletteName {
@@ -195,6 +197,7 @@ export class FireflySwarmScene implements Scene {
   constructor(state: RunState, prev: Scene) {
     this.state = state;
     this.prev = prev;
+    sfx.wonder();
     for (let i = 0; i < 22; i++) {
       this.flies.push({
         x: Math.random() * SCREEN_W,
@@ -281,6 +284,7 @@ export class TwinMoonsScene implements Scene {
   constructor(state: RunState, prev: Scene) {
     this.state = state;
     this.prev = prev;
+    sfx.wonder();
   }
 
   paletteName(): PaletteName { return 'indigo'; }

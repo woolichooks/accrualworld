@@ -13,6 +13,7 @@ import { PuzzleScene, type PuzzleResult } from './puzzle';
 import { BrewBenchScene } from './brew';
 import { CodexScene } from './codex';
 import { StatusScene } from './status';
+import { sfx } from './audio';
 import { DIFFICULTY, type RunState, type SpeciesId } from './types';
 import type { GardenScene } from './garden';
 
@@ -127,10 +128,11 @@ export class ConsoleMenu implements Scene {
       if (this.toast.t <= 0) this.toast = null;
     }
 
-    if (input.justPressed('up'))   this.idx = (this.idx - 1 + this.items.length) % this.items.length;
-    if (input.justPressed('down')) this.idx = (this.idx + 1) % this.items.length;
-    if (input.justPressed('b') || input.justPressed('start')) return this.prev;
+    if (input.justPressed('up'))   { this.idx = (this.idx - 1 + this.items.length) % this.items.length; sfx.cursor(); }
+    if (input.justPressed('down')) { this.idx = (this.idx + 1) % this.items.length; sfx.cursor(); }
+    if (input.justPressed('b') || input.justPressed('start')) { sfx.cancel(); return this.prev; }
     if (input.justPressed('a')) {
+      sfx.confirm();
       const mc: MenuContext = { state: this.state, prev: this.prev, self: this };
       const next = this.items[this.idx].action(mc);
       if (next) return next;

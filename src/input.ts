@@ -28,16 +28,26 @@ const KEY_MAP: Record<string, Button> = {
   Tab: 'tab',
 };
 
+import { initAudio } from './audio';
+
 export class Input {
   private held = new Set<Button>();
   private edge = new Set<Button>();
   private consumed = new Set<Button>();
 
   constructor(root: HTMLElement) {
+    // Browser autoplay policy: WebAudio can only spin up inside a
+    // user gesture, so we defer init to the first key or pointer
+    // event. After that the audio module's no-op-when-uninitialised
+    // path stays cheap.
+    let inited = false;
+    const ensureAudio = () => { if (!inited) { inited = true; initAudio(); } };
+
     window.addEventListener('keydown', (e) => {
       const b = KEY_MAP[e.key];
       if (!b) return;
       e.preventDefault();
+      ensureAudio();
       if (!this.held.has(b)) this.edge.add(b);
       this.held.add(b);
     });
@@ -55,6 +65,7 @@ export class Input {
       if (!BUTTONS.includes(b)) continue;
       const press = (ev: Event) => {
         ev.preventDefault();
+        ensureAudio();
         if (!this.held.has(b)) this.edge.add(b);
         this.held.add(b);
         el.classList.add('pressed');

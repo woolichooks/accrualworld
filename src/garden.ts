@@ -6,6 +6,7 @@ import { drawHeart, HEART_W } from './heart';
 import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import { saveRun } from './save';
+import { sfx } from './audio';
 import { drawSeedIcon, drawTile, MUTATIONS, SPECIES_DATA } from './species';
 import { ConsoleMenu } from './menu';
 import type { Scene } from './scene';
@@ -131,15 +132,18 @@ export class GardenScene implements Scene {
 
     // Cursor movement.
     const c = this.state.cursor;
-    if (input.justPressed('left'))  { c.x = (c.x - 1 + GRID_W) % GRID_W; changed = true; }
-    if (input.justPressed('right')) { c.x = (c.x + 1) % GRID_W;          changed = true; }
-    if (input.justPressed('up'))    { c.y = (c.y - 1 + GRID_H) % GRID_H; changed = true; }
-    if (input.justPressed('down'))  { c.y = (c.y + 1) % GRID_H;          changed = true; }
+    const moved =
+      input.justPressed('left')  ? (c.x = (c.x - 1 + GRID_W) % GRID_W, true) :
+      input.justPressed('right') ? (c.x = (c.x + 1) % GRID_W, true) :
+      input.justPressed('up')    ? (c.y = (c.y - 1 + GRID_H) % GRID_H, true) :
+      input.justPressed('down')  ? (c.y = (c.y + 1) % GRID_H, true) : false;
+    if (moved) { sfx.cursor(); changed = true; }
 
     // SELECT cycles the chosen seed type.
     if (input.justPressed('select')) {
       const i = SPECIES.indexOf(this.state.selectedSeed);
       this.state.selectedSeed = SPECIES[(i + 1) % SPECIES.length];
+      sfx.cursor();
       changed = true;
     }
 
@@ -155,9 +159,11 @@ export class GardenScene implements Scene {
           tile.stageStartedAt = this.state.gameTime;
           tile.lastWateredAt = 0;
           this.toast = { msg: `PLANTED ${SPECIES_DATA[seed].name}`, t: TOAST_S };
+          sfx.plant();
           changed = true;
         } else {
           this.toast = { msg: 'NO SEEDS', t: TOAST_S };
+          sfx.warn();
         }
       } else if (tile.stage === 4 && tile.species) {
         const sp = SPECIES_DATA[tile.species];
@@ -170,6 +176,9 @@ export class GardenScene implements Scene {
           const m = MUTATIONS[tile.species];
           m.apply(this.state);
           msg = `${m.name}! ${m.harvestBonus}`;
+          sfx.wonder();
+        } else {
+          sfx.harvest();
         }
         this.toast = { msg, t: TOAST_S };
         tile.species = null;
@@ -189,9 +198,11 @@ export class GardenScene implements Scene {
           this.state.inventory.water--;
           tile.lastWateredAt = this.state.gameTime;
           this.toast = { msg: 'WATERED', t: TOAST_S };
+          sfx.water();
           changed = true;
         } else {
           this.toast = { msg: 'NO WATER', t: TOAST_S };
+          sfx.warn();
         }
       }
     }

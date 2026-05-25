@@ -7,6 +7,8 @@ import type { Scene } from './scene';
 import { loadRun, newRun, clearRun } from './save';
 import { registerTitle } from './gameover';
 import { DIFFICULTY, type Difficulty } from './types';
+import { getShakeOffset, updateShake } from './shake';
+import { SettingsScene } from './settings_scene';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -53,13 +55,14 @@ const defaultPalette: PaletteName = 'acrid';
 document.getElementById('powerled')!.classList.add('on');
 
 // ---- Title scene ---------------------------------------------------------
+type TitleAction = 'continue' | 'new' | 'settings';
+
 class TitleScene implements Scene {
   private t = 0;
   private stars: { x: number; y: number; phase: number }[] = [];
-  // Two-step menu: main -> difficulty (only when starting a new run).
-  private mainIdx = 0;            // 0 CONTINUE, 1 NEW RUN
-  private picking = false;        // true while the difficulty submenu is open
-  private diffIdx = 1;            // default cursor lands on NORMAL
+  private mainIdx = 0;
+  private picking = false;
+  private diffIdx = 1;
   private readonly diffs: Difficulty[] = ['easy', 'normal', 'hard'];
   private hasSave = loadRun() !== null;
 
@@ -72,6 +75,14 @@ class TitleScene implements Scene {
       });
     }
     if (!this.hasSave) this.mainIdx = 1;
+  }
+
+  private mainItems(): { label: string; action: TitleAction; enabled: boolean }[] {
+    return [
+      { label: 'CONTINUE', action: 'continue', enabled: this.hasSave },
+      { label: 'NEW RUN',  action: 'new',      enabled: true },
+      { label: 'SETTINGS', action: 'settings', enabled: true },
+    ];
   }
 
   update(dt: number, input: Input): Scene | null {
@@ -88,15 +99,15 @@ class TitleScene implements Scene {
       return null;
     }
 
-    if (this.hasSave && (input.justPressed('up') || input.justPressed('down'))) {
-      this.mainIdx = 1 - this.mainIdx;
-    }
+    const items = this.mainItems();
+    if (input.justPressed('up'))   this.mainIdx = (this.mainIdx + items.length - 1) % items.length;
+    if (input.justPressed('down')) this.mainIdx = (this.mainIdx + 1) % items.length;
     if (input.justPressed('start') || input.justPressed('a')) {
-      if (this.mainIdx === 0 && this.hasSave) {
-        return new GardenScene(loadRun()!);
-      }
-      this.picking = true;
-      return null;
+      const item = items[this.mainIdx];
+      if (!item.enabled) return null;
+      if (item.action === 'continue') return new GardenScene(loadRun()!);
+      if (item.action === 'new')       { this.picking = true; return null; }
+      if (item.action === 'settings')  return new SettingsScene(this);
     }
     return null;
   }
@@ -142,14 +153,11 @@ class TitleScene implements Scene {
     }
 
     // Main menu
-    const opts: { label: string; enabled: boolean }[] = [
-      { label: 'CONTINUE', enabled: this.hasSave },
-      { label: 'NEW RUN',  enabled: true },
-    ];
+    const opts = this.mainItems();
     for (let i = 0; i < opts.length; i++) {
       const o = opts[i];
       const label = o.label;
-      const y = 72 + i * 12;
+      const y = 68 + i * 11;
       const x = Math.floor((SCREEN_W - textWidth(label)) / 2);
       const dim = !o.enabled;
       const focused = i === this.mainIdx;
@@ -199,8 +207,17 @@ function frame(now: number) {
   last = now;
   const next = scene.update(dt, input);
   if (next) scene = next;
+  updateShake(dt);
   const paletteName = scene.paletteName?.() ?? defaultPalette;
+  const { x: sx, y: sy } = getShakeOffset();
+  // Clear the canvas first (untranslated) so a shake offset can't
+  // leave smear on the edges.
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+  ctx.setTransform(1, 0, 0, 1, sx, sy);
   scene.draw(ctx, PALETTES[paletteName]);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

@@ -6,6 +6,8 @@ import { drawText5, LINE5_H, textWidth5 } from './font5';
 import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import { clearRun } from './save';
+import { sfx } from './audio';
+import { startShake } from './shake';
 import type { Scene } from './scene';
 import type { RunState } from './types';
 
@@ -29,6 +31,8 @@ export class GameOverScene implements Scene {
     this.cause = cause;
     // Wipe the run immediately; the player can only return to title.
     clearRun();
+    sfx.death();
+    startShake(4, 0.8);
   }
 
   paletteName(): PaletteName {

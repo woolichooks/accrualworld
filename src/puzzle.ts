@@ -16,6 +16,7 @@ import type { Scene } from './scene';
 import { wrap } from './text-wrap';
 import type { PuzzleInstance } from './puzzles/types';
 import { DIFFICULTY, type Difficulty } from './types';
+import { sfx } from './audio';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -100,19 +101,15 @@ export class PuzzleScene implements Scene {
     }
 
     if (q.kind === 'mc') {
-      if (input.justPressed('up')) st.mcChoice = (st.mcChoice + q.choices.length - 1) % q.choices.length;
-      if (input.justPressed('down')) st.mcChoice = (st.mcChoice + 1) % q.choices.length;
+      if (input.justPressed('up'))   { st.mcChoice = (st.mcChoice + q.choices.length - 1) % q.choices.length; sfx.cursor(); }
+      if (input.justPressed('down')) { st.mcChoice = (st.mcChoice + 1) % q.choices.length; sfx.cursor(); }
       if (input.justPressed('a')) this.submitAnswer(st.mcChoice);
     } else {
       // Dial input.
-      if (input.justPressed('left')) st.dialFocus = (st.dialFocus + q.digits - 1) % q.digits;
-      if (input.justPressed('right')) st.dialFocus = (st.dialFocus + 1) % q.digits;
-      if (input.justPressed('up')) {
-        st.dialDigits[st.dialFocus] = (st.dialDigits[st.dialFocus] + 1) % 10;
-      }
-      if (input.justPressed('down')) {
-        st.dialDigits[st.dialFocus] = (st.dialDigits[st.dialFocus] + 9) % 10;
-      }
+      if (input.justPressed('left'))  { st.dialFocus = (st.dialFocus + q.digits - 1) % q.digits; sfx.cursor(); }
+      if (input.justPressed('right')) { st.dialFocus = (st.dialFocus + 1) % q.digits; sfx.cursor(); }
+      if (input.justPressed('up'))   { st.dialDigits[st.dialFocus] = (st.dialDigits[st.dialFocus] + 1) % 10; sfx.click(); }
+      if (input.justPressed('down')) { st.dialDigits[st.dialFocus] = (st.dialDigits[st.dialFocus] + 9) % 10; sfx.click(); }
       if (input.justPressed('a')) {
         const value = st.dialDigits.reduce((acc, d) => acc * 10 + d, 0);
         this.submitAnswer(value);
@@ -153,6 +150,9 @@ export class PuzzleScene implements Scene {
       this.firstSolve = !this.meta.codexSeen.includes(this.puzzle.templateId);
       if (this.firstSolve) this.meta.codexSeen.push(this.puzzle.templateId);
       saveMeta(this.meta);
+      sfx.puzzleCorrect();
+    } else {
+      sfx.puzzleWrong();
     }
   }
 
