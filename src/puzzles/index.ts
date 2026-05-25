@@ -4,16 +4,24 @@
 
 import { Rng, randomSeed } from '../rng';
 import { inv_lcnrv_t1 } from './templates/inv_lcnrv_t1';
+import { cash_classify_t1 } from './templates/cash_classify_t1';
+import { ppe_cap_expense_t1 } from './templates/ppe_cap_expense_t1';
 import type { PuzzleInstance, PuzzleTemplate } from './types';
 
-const TEMPLATES: PuzzleTemplate[] = [
+export const TEMPLATES: PuzzleTemplate[] = [
   inv_lcnrv_t1,
+  cash_classify_t1,
+  ppe_cap_expense_t1,
 ];
 
 export function pickPuzzle(sol: number): PuzzleInstance {
   const rng = new Rng(randomSeed());
   const t = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
   return t.generate(rng, sol);
+}
+
+export function templateById(id: string): PuzzleTemplate | undefined {
+  return TEMPLATES.find((t) => t.id === id);
 }
 
 export type { PuzzleInstance } from './types';

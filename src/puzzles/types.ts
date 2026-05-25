@@ -48,5 +48,9 @@ export interface PuzzleTemplate {
   id: string;
   topic: Topic;
   tier: Tier;
+  // Static metadata used by the Codex screen so we don't have to
+  // generate a puzzle instance just to label one in a list.
+  displayName: string;   // "ASC 330 - INVENTORY"
+  blurb: string;         // "LOWER OF COST OR NRV"
   generate(rng: import('../rng').Rng, sol: number): PuzzleInstance;
 }

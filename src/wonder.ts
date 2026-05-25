@@ -173,3 +173,243 @@ export class MeteorShowerScene implements Scene {
     drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[2]);
   }
 }
+
+// ---- Firefly Swarm ------------------------------------------------------
+// Bioluminescent drift across the garden. Gentle pulse. Awards +1 of
+// every seed type and may trigger mutations like other wonders.
+
+interface Firefly { x: number; y: number; vx: number; vy: number; phase: number; }
+
+export class FireflySwarmScene implements Scene {
+  static readonly ID = 'firefly_swarm';
+
+  private state: RunState;
+  private prev: Scene;
+  private t = 0;
+  private duration = 5.5;
+  private flies: Firefly[] = [];
+  private applied = false;
+  private firstSighting = false;
+  private mutatedCount = 0;
+
+  constructor(state: RunState, prev: Scene) {
+    this.state = state;
+    this.prev = prev;
+    for (let i = 0; i < 22; i++) {
+      this.flies.push({
+        x: Math.random() * SCREEN_W,
+        y: 30 + Math.random() * (SCREEN_H - 60),
+        vx: (Math.random() - 0.5) * 14,
+        vy: (Math.random() - 0.5) * 10,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  paletteName(): PaletteName { return 'indigo'; }
+
+  update(dt: number, _input: Input): Scene | null {
+    this.t += dt;
+    for (const f of this.flies) {
+      f.x += f.vx * dt; f.y += f.vy * dt;
+      if (f.x < 0 || f.x > SCREEN_W) f.vx *= -1;
+      if (f.y < 20 || f.y > SCREEN_H - 18) f.vy *= -1;
+      f.phase += dt * 3;
+    }
+    if (!this.applied && this.t > this.duration - 1.0) {
+      this.applied = true;
+      this.state.inventory.seeds.mint += 1;
+      this.state.inventory.seeds.sunflower += 1;
+      this.state.inventory.seeds.basil += 1;
+      this.mutatedCount = mutateGardenPlants(this.state, 0.35);
+      saveRun(this.state);
+      const meta = loadMeta();
+      if (!meta.witnessedWonders.includes(FireflySwarmScene.ID)) {
+        meta.witnessedWonders.push(FireflySwarmScene.ID);
+        this.firstSighting = true;
+      }
+      saveMeta(meta);
+    }
+    if (this.t >= this.duration) return this.prev;
+    return null;
+  }
+
+  draw(ctx: CanvasRenderingContext2D, p: Palette): void {
+    this.prev.draw(ctx, p);
+    ctx.fillStyle = p[0];
+    for (let y = 0; y < SCREEN_H; y += 2) ctx.fillRect(0, y, SCREEN_W, 1);
+
+    for (const f of this.flies) {
+      const glow = (Math.sin(f.phase) + 1) * 0.5;
+      ctx.fillStyle = glow > 0.5 ? p[3] : p[2];
+      ctx.fillRect(Math.round(f.x), Math.round(f.y), 1, 1);
+    }
+
+    if (this.t < 1.6) {
+      const msg = 'FIREFLY SWARM';
+      drawText5(ctx, msg, Math.floor((SCREEN_W - textWidth5(msg)) / 2), 30, p[3]);
+    }
+
+    if (this.t > this.duration - 1.0) {
+      const lines = ['+1 MINT  +1 SUN  +1 BASIL'];
+      if (this.mutatedCount > 0) lines.push(`${this.mutatedCount} PLANT(S) MUTATED`);
+      if (this.firstSighting) lines.push('NEW SIGHTING LOGGED');
+      drawCard(ctx, lines, p);
+    }
+
+    const hint = 'WATCHING THE DRIFT...';
+    drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[2]);
+  }
+}
+
+// ---- Twin Moons ---------------------------------------------------------
+// Both moons align over the horizon. Each currently-growing plant
+// advances one stage immediately, capped at MATURE. No mutation roll —
+// the moons are nurturing, not radiative.
+
+export class TwinMoonsScene implements Scene {
+  static readonly ID = 'twin_moons';
+
+  private state: RunState;
+  private prev: Scene;
+  private t = 0;
+  private duration = 5.0;
+  private applied = false;
+  private firstSighting = false;
+  private advanced = 0;
+
+  constructor(state: RunState, prev: Scene) {
+    this.state = state;
+    this.prev = prev;
+  }
+
+  paletteName(): PaletteName { return 'indigo'; }
+
+  update(dt: number, _input: Input): Scene | null {
+    this.t += dt;
+    if (!this.applied && this.t > this.duration - 1.0) {
+      this.applied = true;
+      for (const tile of this.state.tiles) {
+        if (!tile.species) continue;
+        if (tile.stage >= 1 && tile.stage <= 3) {
+          tile.stage = (tile.stage + 1) as 1 | 2 | 3 | 4;
+          tile.stageStartedAt = this.state.gameTime;
+          this.advanced += 1;
+        }
+      }
+      saveRun(this.state);
+      const meta = loadMeta();
+      if (!meta.witnessedWonders.includes(TwinMoonsScene.ID)) {
+        meta.witnessedWonders.push(TwinMoonsScene.ID);
+        this.firstSighting = true;
+      }
+      saveMeta(meta);
+    }
+    if (this.t >= this.duration) return this.prev;
+    return null;
+  }
+
+  draw(ctx: CanvasRenderingContext2D, p: Palette): void {
+    this.prev.draw(ctx, p);
+    ctx.fillStyle = p[0];
+    for (let y = 0; y < SCREEN_H; y += 2) ctx.fillRect(0, y, SCREEN_W, 1);
+
+    // Two moons cresting over the horizon, slowly rising.
+    const rise = Math.min(this.t / 2.0, 1.0);
+    const baseY = 80 - Math.floor(rise * 30);
+    drawMoon(ctx, 48, baseY, p);
+    drawMoon(ctx, 110, baseY - 6, p);
+
+    if (this.t < 1.8) {
+      const msg = 'TWIN MOONS ALIGN';
+      drawText5(ctx, msg, Math.floor((SCREEN_W - textWidth5(msg)) / 2), 22, p[3]);
+    }
+
+    if (this.t > this.duration - 1.0) {
+      const lines = [`${this.advanced} PLANT(S) BLOOMED`];
+      if (this.firstSighting) lines.push('NEW SIGHTING LOGGED');
+      drawCard(ctx, lines, p);
+    }
+
+    const hint = 'WATCHING THE SKY...';
+    drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[2]);
+  }
+}
+
+function drawMoon(ctx: CanvasRenderingContext2D, cx: number, cy: number, p: Palette): void {
+  // Soft 7x7 moon: outline in p[2], face in p[3], crescent shadow in p[1].
+  const pix = [
+    [0, 1, 1, 1, 1, 1, 0],
+    [1, 2, 2, 2, 2, 1, 0],
+    [1, 2, 2, 2, 1, 0, 0],
+    [1, 2, 2, 1, 0, 0, 0],
+    [1, 2, 2, 2, 1, 0, 0],
+    [1, 2, 2, 2, 2, 1, 0],
+    [0, 1, 1, 1, 1, 1, 0],
+  ];
+  for (let yy = 0; yy < pix.length; yy++) {
+    for (let xx = 0; xx < pix[yy].length; xx++) {
+      const v = pix[yy][xx];
+      if (v === 0) continue;
+      ctx.fillStyle = v === 1 ? p[2] : p[3];
+      ctx.fillRect(cx + xx - 3, cy + yy - 3, 1, 1);
+    }
+  }
+}
+
+function drawCard(ctx: CanvasRenderingContext2D, lines: string[], p: Palette): void {
+  const boxH = lines.length * LINE5_H + 6;
+  const boxW = 130;
+  const bx = Math.floor((SCREEN_W - boxW) / 2);
+  const by = SCREEN_H - boxH - 14;
+  ctx.fillStyle = p[0];
+  ctx.fillRect(bx, by, boxW, boxH);
+  ctx.fillStyle = p[3];
+  ctx.fillRect(bx, by, boxW, 1);
+  ctx.fillRect(bx, by + boxH - 1, boxW, 1);
+  ctx.fillRect(bx, by, 1, boxH);
+  ctx.fillRect(bx + boxW - 1, by, 1, boxH);
+  let y = by + 4;
+  for (const ln of lines) {
+    drawText5(ctx, ln, bx + 4, y, p[3]);
+    y += LINE5_H;
+  }
+}
+
+// ---- Wonder registry ---------------------------------------------------
+export interface WonderDef {
+  id: string;
+  name: string;
+  description: string;
+  make(state: RunState, prev: Scene): Scene;
+}
+
+export const WONDERS: WonderDef[] = [
+  {
+    id: MeteorShowerScene.ID,
+    name: 'METEOR SHOWER',
+    description: 'COSMIC RAIN. +WATER. PLANTS MAY MUTATE.',
+    make: (s, p) => new MeteorShowerScene(s, p),
+  },
+  {
+    id: FireflySwarmScene.ID,
+    name: 'FIREFLY SWARM',
+    description: 'BIOLUMINESCENT DRIFT. +1 OF EACH SEED.',
+    make: (s, p) => new FireflySwarmScene(s, p),
+  },
+  {
+    id: TwinMoonsScene.ID,
+    name: 'TWIN MOONS',
+    description: 'MOONS ALIGN. PLANTS LEAP ONE STAGE.',
+    make: (s, p) => new TwinMoonsScene(s, p),
+  },
+];
+
+export function pickWonder(state: RunState, prev: Scene): Scene {
+  const w = WONDERS[Math.floor(Math.random() * WONDERS.length)];
+  return w.make(state, prev);
+}
+
+export function wonderById(id: string): WonderDef | undefined {
+  return WONDERS.find((w) => w.id === id);
+}

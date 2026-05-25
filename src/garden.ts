@@ -10,7 +10,7 @@ import { ConsoleMenu } from './menu';
 import type { Scene } from './scene';
 import { NEXT_PHASE, PHASE_SECONDS, paletteForPhase, phaseLabel } from './time';
 import { drawSkyClock, SKYCLOCK_W } from './sky';
-import { MeteorShowerScene } from './wonder';
+import { pickWonder } from './wonder';
 import { ThreatScene, pickThreat } from './threat';
 import {
   GRID_H,
@@ -225,7 +225,7 @@ export class GardenScene implements Scene {
     if (next === 'night' && !this.isSleeping) {
       const r = Math.random();
       if (r < 0.30) {
-        this.pendingScene = new MeteorShowerScene(this.state, this);
+        this.pendingScene = pickWonder(this.state, this);
       } else if (r < 0.80) {
         this.pendingScene = new ThreatScene(this.state, pickThreat(), this);
       }

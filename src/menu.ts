@@ -11,6 +11,7 @@ import { loadMeta } from './meta';
 import { pickPuzzle } from './puzzles';
 import { PuzzleScene, type PuzzleResult } from './puzzle';
 import { BrewBenchScene } from './brew';
+import { CodexScene } from './codex';
 import type { RunState, SpeciesId } from './types';
 import type { GardenScene } from './garden';
 
@@ -63,6 +64,11 @@ export class ConsoleMenu implements Scene {
       label: 'BREW   -  COMBINE LEAVES',
       hint: 'TURN HARVEST INTO POTIONS',
       action: (mc) => new BrewBenchScene(mc.state, mc.self),
+    },
+    {
+      label: 'CODEX  -  ARCHIVES',
+      hint: 'STANDARDS, WONDERS, RECIPES',
+      action: (mc) => new CodexScene(mc.state, mc.self),
     },
     {
       label: 'SLEEP',

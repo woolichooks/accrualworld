@@ -13,6 +13,8 @@ export const inv_lcnrv_t1: PuzzleTemplate = {
   id: 'inv-lcnrv-t1',
   topic: '330',
   tier: 1,
+  displayName: 'ASC 330 - INVENTORY',
+  blurb: 'LOWER OF COST OR NRV',
 
   generate(rng: Rng, sol: number): PuzzleInstance {
     // Cost in whole dollars; SP differs from cost by at least 3 either
