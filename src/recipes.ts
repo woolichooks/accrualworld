@@ -7,9 +7,17 @@
 // to meta.discoveredRecipes so future encounters reveal the name and
 // effect instead of "???".
 
-import type { RunState, SpeciesId } from './types';
+import { STAT_MAX, type RunState, type SpeciesId } from './types';
 
-export type RecipeId = 'dew_tonic' | 'mint_calm' | 'tri_sap';
+export type RecipeId =
+  | 'dew_tonic'
+  | 'mint_calm'
+  | 'tri_sap'
+  | 'iron_salve'
+  | 'aether_vapor'
+  | 'volt_brew';
+
+const restore = (cur: number, amt: number) => Math.min(STAT_MAX, cur + amt);
 
 export interface Recipe {
   id: RecipeId;
@@ -51,6 +59,29 @@ export const RECIPES: Recipe[] = [
       s.inventory.seeds[sp] += 1;
       return `+3 H2O, +1 ${sp.toUpperCase()}`;
     },
+  },
+  // Defensive recipes — restore shelter stats. Effects clamp at STAT_MAX
+  // so overbrewing wastes leaves; the player has to time it.
+  {
+    id: 'iron_salve',
+    name: 'IRON SALVE',
+    effect: '+4 HULL',
+    ingredients: { basil: 3 },
+    apply: (s) => { s.shelter.hull = restore(s.shelter.hull, 4); return '+4 HULL'; },
+  },
+  {
+    id: 'aether_vapor',
+    name: 'AETHER VAPOR',
+    effect: '+4 OXYGEN',
+    ingredients: { sunflower: 1, mint: 2 },
+    apply: (s) => { s.shelter.oxygen = restore(s.shelter.oxygen, 4); return '+4 OXYGEN'; },
+  },
+  {
+    id: 'volt_brew',
+    name: 'VOLT BREW',
+    effect: '+4 POWER',
+    ingredients: { sunflower: 2, basil: 1 },
+    apply: (s) => { s.shelter.power = restore(s.shelter.power, 4); return '+4 POWER'; },
   },
 ];
 

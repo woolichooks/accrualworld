@@ -11,10 +11,12 @@ import type { Scene } from './scene';
 import { NEXT_PHASE, PHASE_SECONDS, paletteForPhase, phaseLabel } from './time';
 import { drawSkyClock, SKYCLOCK_W } from './sky';
 import { MeteorShowerScene } from './wonder';
+import { ThreatScene, pickThreat } from './threat';
 import {
   GRID_H,
   GRID_W,
   SPECIES,
+  STAT_MAX,
   TILE_PX,
   type GrowthStage,
   type RunState,
@@ -210,13 +212,19 @@ export class GardenScene implements Scene {
     if (next === 'day' && prev === 'dawn') {
       this.state.sol += 1;
     }
-    // Entering night: 30% chance of a wonder. Skipped during sleep.
+    // Entering night: roll one of wonder / threat / nothing.
+    // Suppressed during sleep — the colonist neither sees the sky nor
+    // weathers the storm consciously (sleep is the safe-but-quiet path).
     if (next === 'night' && !this.isSleeping) {
-      if (Math.random() < 0.30) {
+      const r = Math.random();
+      if (r < 0.30) {
         this.pendingScene = new MeteorShowerScene(this.state, this);
+      } else if (r < 0.80) {
+        this.pendingScene = new ThreatScene(this.state, pickThreat(), this);
       }
     }
   }
+
 
   // ---- Draw -------------------------------------------------------------
   draw(ctx: CanvasRenderingContext2D, p: Palette): void {
@@ -228,9 +236,36 @@ export class GardenScene implements Scene {
     this.drawGrid(ctx, p);
     this.drawCursor(ctx, p);
     this.drawStockPanel(ctx, p);
+    this.drawStatsPanel(ctx, p);
     this.drawTileStatus(ctx, p);
     this.drawPrompt(ctx, p);
     if (this.toast) this.drawToast(ctx, p);
+  }
+
+  // Shelter stats line. Each stat is dimmer when low (<=3) and blinks
+  // when critical (<=1) so the danger reads at a glance.
+  private drawStatsPanel(ctx: CanvasRenderingContext2D, p: Palette): void {
+    const y = GRID_Y + GRID_H * TILE_PX + 12;
+    const s = this.state.shelter;
+    const stats: [string, number][] = [
+      ['HUL', s.hull],
+      ['OXY', s.oxygen],
+      ['PWR', s.power],
+      ['H2O', this.state.inventory.water],
+    ];
+    const chunkW = Math.floor(SCREEN_W / stats.length);
+    for (let i = 0; i < stats.length; i++) {
+      const [label, val] = stats[i];
+      const txt = `${label} ${val}`;
+      const x = i * chunkW + Math.floor((chunkW - textWidth(txt)) / 2);
+      let color = p[3];
+      if (label !== 'H2O') {
+        if (val <= 1) color = (Math.floor(this.blink * 3) % 2 === 0) ? p[3] : p[1];
+        else if (val <= 3) color = p[2];
+        else if (val >= STAT_MAX) color = p[3];
+      }
+      drawText(ctx, txt, x, y, color);
+    }
   }
 
   private drawHud(ctx: CanvasRenderingContext2D, p: Palette): void {
@@ -246,9 +281,7 @@ export class GardenScene implements Scene {
     const groupX = Math.floor((SCREEN_W - groupW) / 2);
     drawSkyClock(ctx, groupX, 1, this.state.phase, this.state.phaseTime, p);
     drawText(ctx, phase, groupX + SKYCLOCK_W + 3, 3, p[3]);
-
-    const wText = `H2O ${this.state.inventory.water}`;
-    drawText(ctx, wText, SCREEN_W - 2 - textWidth(wText), 3, p[3]);
+    // (H2O moved into the shelter-stats row below the grid.)
   }
 
   // Always-visible stock for all species: <icon> <name> <seeds>/<leaves>.
@@ -274,10 +307,10 @@ export class GardenScene implements Scene {
     }
   }
 
-  // Below the stock row: what's on the focused tile.
+  // Below the stats row: what's on the focused tile.
   private drawTileStatus(ctx: CanvasRenderingContext2D, p: Palette): void {
     const tile = this.state.tiles[this.state.cursor.y * GRID_W + this.state.cursor.x];
-    const y = GRID_Y + GRID_H * TILE_PX + 14;
+    const y = GRID_Y + GRID_H * TILE_PX + 22;
     let label: string;
     if (!tile.species || tile.stage === 0) {
       label = 'TILE: EMPTY';

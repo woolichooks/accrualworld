@@ -22,6 +22,7 @@ export function newRun(): RunState {
       water: 8,
       harvested: { mint: 0, sunflower: 0, basil: 0 },
     },
+    shelter: { hull: 10, oxygen: 10, power: 10 },
     sol: 1,
     gameTime: 0,
     phase: 'day',
@@ -43,6 +44,8 @@ export function loadRun(): RunState | null {
     // Day/night fields added in milestone 4 — backfill for older saves.
     data.phase ??= 'day';
     data.phaseTime ??= 0;
+    // Shelter stats added in milestone 6.
+    data.shelter ??= { hull: 10, oxygen: 10, power: 10 };
     return data;
   } catch {
     return null;

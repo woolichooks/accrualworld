@@ -5,6 +5,7 @@ import { drawText, textWidth } from './font';
 import { GardenScene } from './garden';
 import type { Scene } from './scene';
 import { loadRun, newRun, clearRun } from './save';
+import { registerTitle } from './gameover';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -142,6 +143,10 @@ class TitleScene implements Scene {
     drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[2]);
   }
 }
+
+// Give the game-over scene a way to construct a fresh TitleScene
+// without importing main.ts (which would cycle).
+registerTitle(() => new TitleScene());
 
 let scene: Scene = new TitleScene();
 

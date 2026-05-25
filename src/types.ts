@@ -20,12 +20,23 @@ export interface Inventory {
   harvested: Record<SpeciesId, number>;
 }
 
+// Shelter stats. Threats reduce these at night; defensive brews
+// restore them. Any stat hitting 0 ends the run.
+export interface Shelter {
+  hull: number;
+  oxygen: number;
+  power: number;
+}
+
+export const STAT_MAX = 10;
+
 export interface RunState {
   schema: 1;
   tiles: Tile[];           // length GRID_W * GRID_H, row-major
   cursor: { x: number; y: number };
   selectedSeed: SpeciesId;
   inventory: Inventory;
+  shelter: Shelter;
   sol: number;             // colony day counter
   gameTime: number;        // accumulated seconds since run start
   // Day/night cycle
