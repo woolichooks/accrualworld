@@ -33,7 +33,8 @@ export interface Inventory {
 }
 
 // Shelter stats. Threats reduce these at night; defensive brews
-// restore them. Any stat hitting 0 ends the run.
+// restore them. A stat at 0 starts a critical countdown — see
+// criticalSols on RunState.
 export interface Shelter {
   hull: number;
   oxygen: number;
@@ -41,6 +42,11 @@ export interface Shelter {
 }
 
 export const STAT_MAX = 10;
+
+// Number of dawns a shelter stat may stay at 0 before the run ends.
+// 0 means "no grace, die instantly"; 2 gives the player one full
+// cycle to brew the matching defensive recipe.
+export const CRITICAL_SOLS_GRACE = 2;
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
@@ -87,6 +93,10 @@ export interface RunState {
   selectedSeed: SpeciesId;
   inventory: Inventory;
   shelter: Shelter;
+  // Per-stat count of dawns the stat has been at 0. Reset whenever
+  // the stat is restored above 0. When any value reaches
+  // CRITICAL_SOLS_GRACE, the run ends.
+  criticalSols: { hull: number; oxygen: number; power: number };
   sol: number;             // colony day counter
   gameTime: number;        // accumulated seconds since run start
   // Day/night cycle

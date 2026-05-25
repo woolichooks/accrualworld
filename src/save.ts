@@ -31,6 +31,7 @@ export function newRun(difficulty: Difficulty = 'normal'): RunState {
       },
     },
     shelter: { hull: 10, oxygen: 10, power: 10 },
+    criticalSols: { hull: 0, oxygen: 0, power: 0 },
     sol: 1,
     gameTime: 0,
     phase: 'day',
@@ -65,6 +66,9 @@ export function loadRun(): RunState | null {
     data.phaseTime ??= 0;
     // Shelter stats added in milestone 6.
     data.shelter ??= { hull: 10, oxygen: 10, power: 10 };
+    // Critical-sols counters added later — start at 0 for any save
+    // that predates the grace-period system.
+    data.criticalSols ??= { hull: 0, oxygen: 0, power: 0 };
     // Mutations added in milestone 6 polish — backfill `mutated:false`.
     for (const t of data.tiles) t.mutated ??= false;
     // Difficulty added later — default existing saves to NORMAL.

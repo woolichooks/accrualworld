@@ -15,7 +15,9 @@ import { NEXT_PHASE, PHASE_SECONDS, paletteForPhase, phaseLabel } from './time';
 import { drawSkyClock, SKYCLOCK_W } from './sky';
 import { pickWonder } from './wonder';
 import { ThreatScene, pickThreat } from './threat';
+import { GameOverScene } from './gameover';
 import {
+  CRITICAL_SOLS_GRACE,
   GRID_H,
   GRID_W,
   SPECIES,
@@ -225,15 +227,40 @@ export class GardenScene implements Scene {
   }
 
   // Step exactly one phase forward; called by update() and by Sleep.
+  // Run the per-dawn grace tick: any stat at 0 bumps its counter,
+  // any stat above 0 resets to 0, and if any counter has reached
+  // CRITICAL_SOLS_GRACE the run ends on the next update.
+  private tickCriticalCounters(): void {
+    const s = this.state.shelter;
+    const c = this.state.criticalSols;
+    const tally = (val: number, cur: number) => (val === 0 ? cur + 1 : 0);
+    c.hull   = tally(s.hull,   c.hull);
+    c.oxygen = tally(s.oxygen, c.oxygen);
+    c.power  = tally(s.power,  c.power);
+    let cause = '';
+    if (c.hull   >= CRITICAL_SOLS_GRACE) cause = 'HULL OFFLINE';
+    else if (c.oxygen >= CRITICAL_SOLS_GRACE) cause = 'OXY DEPLETED';
+    else if (c.power  >= CRITICAL_SOLS_GRACE) cause = 'POWER OUT';
+    if (cause) {
+      this.pendingScene = new GameOverScene(this.state, cause);
+    } else if (c.hull > 0 || c.oxygen > 0 || c.power > 0) {
+      // Loud reminder if anything is critical and not yet game over.
+      const left = CRITICAL_SOLS_GRACE - Math.max(c.hull, c.oxygen, c.power);
+      this.toast = { msg: `CRITICAL - ${left} SOL LEFT`, t: 2.4 };
+    }
+  }
+
   private advancePhase(): void {
     const prev = this.state.phase;
     const next = NEXT_PHASE[prev];
     this.state.phase = next;
     // Toast the transition so the player notices.
     this.toast = { msg: phaseLabel(next), t: 1.4 };
-    // Dawn advances the Sol counter (a new colony day).
+    // Dawn advances the Sol counter (a new colony day) and is the
+    // tick point for the critical-stat grace counters.
     if (next === 'day' && prev === 'dawn') {
       this.state.sol += 1;
+      this.tickCriticalCounters();
     }
     // Entering night: roll one of wonder / threat / nothing.
     // Suppressed during sleep — the colonist neither sees the sky nor

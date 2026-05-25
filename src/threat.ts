@@ -18,7 +18,6 @@ import { startShake } from './shake';
 import type { Scene } from './scene';
 import { mutateGardenPlants } from './species';
 import type { RunState } from './types';
-import { GameOverScene } from './gameover';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -160,10 +159,10 @@ export class ThreatScene implements Scene {
     }
 
     if (this.t >= this.duration) {
-      // If the threat killed a stat, drop into game over instead of
-      // returning to the garden.
-      const dead = this.state.shelter.hull === 0 || this.state.shelter.oxygen === 0 || this.state.shelter.power === 0;
-      return dead ? new GameOverScene(this.state, this.threat.label) : this.prev;
+      // Stats at 0 don't end the run immediately anymore — the
+      // garden's dawn tick gives the player CRITICAL_SOLS_GRACE
+      // dawns to brew a defensive recipe before the colony dies.
+      return this.prev;
     }
     return null;
   }

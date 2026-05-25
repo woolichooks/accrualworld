@@ -8,7 +8,7 @@ import { drawHeart, HEART_W } from './heart';
 import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import type { Scene } from './scene';
-import { DIFFICULTY, STAT_MAX, SPECIES, type RunState } from './types';
+import { CRITICAL_SOLS_GRACE, DIFFICULTY, STAT_MAX, SPECIES, type RunState } from './types';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -51,11 +51,14 @@ export class StatusScene implements Scene {
     drawText(ctx, `SOL ${this.state.sol}`, SCREEN_W - 2 - textWidth(`SOL ${this.state.sol}`), 3, p[3]);
 
     // Shelter stats — heart, label, segmented bar, numeric.
-    const stats: { label: string; value: number; max: number }[] = [
-      { label: 'HULL',   value: this.state.shelter.hull,   max: STAT_MAX },
-      { label: 'OXYGEN', value: this.state.shelter.oxygen, max: STAT_MAX },
-      { label: 'POWER',  value: this.state.shelter.power,  max: STAT_MAX },
-      { label: 'WATER',  value: this.state.inventory.water, max: STAT_MAX },
+    // `critical` is how many dawns this stat has already been at 0;
+    // CRITICAL_SOLS_GRACE - critical is the sols left before death.
+    const cs = this.state.criticalSols;
+    const stats: { label: string; value: number; max: number; critical: number }[] = [
+      { label: 'HULL',   value: this.state.shelter.hull,    max: STAT_MAX, critical: cs.hull },
+      { label: 'OXYGEN', value: this.state.shelter.oxygen,  max: STAT_MAX, critical: cs.oxygen },
+      { label: 'POWER',  value: this.state.shelter.power,   max: STAT_MAX, critical: cs.power },
+      { label: 'WATER',  value: this.state.inventory.water, max: STAT_MAX, critical: 0 },
     ];
 
     let y = 18;
@@ -73,6 +76,14 @@ export class StatusScene implements Scene {
         ctx.fillRect(barX + c * cellW, y + 1, cellW - 1, 5);
       }
       drawText(ctx, `${s.value}`, SCREEN_W - 14, y + 1, p[3]);
+      // Show a critical countdown for any shelter stat sitting at 0.
+      // The label blinks to keep the danger obvious.
+      if (s.critical > 0) {
+        const left = Math.max(0, CRITICAL_SOLS_GRACE - s.critical);
+        if (Math.floor(this.t * 2) % 2 === 0) {
+          drawText(ctx, `!${left}`, SCREEN_W - 28, y + 1, p[3]);
+        }
+      }
       y += 9;
     }
 
