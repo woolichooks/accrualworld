@@ -10,6 +10,7 @@ import type { PaletteName } from './palette';
 import { loadMeta } from './meta';
 import { pickPuzzle } from './puzzles';
 import { PuzzleScene, type PuzzleResult } from './puzzle';
+import { BrewBenchScene } from './brew';
 import type { RunState, SpeciesId } from './types';
 import type { GardenScene } from './garden';
 
@@ -57,6 +58,11 @@ export class ConsoleMenu implements Scene {
         };
         return new PuzzleScene(puzzle, meta, mc.self, onClose);
       },
+    },
+    {
+      label: 'BREW   -  COMBINE LEAVES',
+      hint: 'TURN HARVEST INTO POTIONS',
+      action: (mc) => new BrewBenchScene(mc.state, mc.self),
     },
     {
       label: 'SLEEP',

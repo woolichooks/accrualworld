@@ -17,6 +17,9 @@ export interface MetaState {
   seedsEarned: Record<SpeciesId, number>;
   // Wonders the player has witnessed at least once, by id.
   witnessedWonders: string[];
+  // Brewing recipes the player has successfully crafted at least once,
+  // by recipe id. Drives the "???" vs full-name reveal on the bench.
+  discoveredRecipes: string[];
 }
 
 export function newMeta(): MetaState {
@@ -26,6 +29,7 @@ export function newMeta(): MetaState {
     codexSeen: [],
     seedsEarned: { mint: 0, sunflower: 0, basil: 0 },
     witnessedWonders: [],
+    discoveredRecipes: [],
   };
 }
 
@@ -40,6 +44,7 @@ export function loadMeta(): MetaState {
     data.codexSeen ??= [];
     data.seedsEarned ??= { mint: 0, sunflower: 0, basil: 0 };
     data.witnessedWonders ??= [];
+    data.discoveredRecipes ??= [];
     return data;
   } catch {
     return newMeta();
