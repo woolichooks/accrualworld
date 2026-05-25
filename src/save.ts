@@ -33,8 +33,11 @@ export function loadRun(): RunState | null {
     if (!raw) return null;
     const data = JSON.parse(raw) as RunState;
     if (data.schema !== 1) return null;
-    // Light validation; reject anything that doesn't match expected shape.
     if (!Array.isArray(data.tiles) || data.tiles.length !== GRID_W * GRID_H) return null;
+    // Backfill any fields a slightly older save might be missing.
+    data.inventory ??= { seeds: { mint: 0, sunflower: 0, basil: 0 }, water: 0, harvested: { mint: 0, sunflower: 0, basil: 0 } };
+    data.inventory.harvested ??= { mint: 0, sunflower: 0, basil: 0 };
+    data.inventory.seeds ??= { mint: 0, sunflower: 0, basil: 0 };
     return data;
   } catch {
     return null;

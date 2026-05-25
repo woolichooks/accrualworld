@@ -94,8 +94,11 @@ export class GardenScene implements Scene {
         }
       } else if (tile.stage === 4 && tile.species) {
         const sp = SPECIES_DATA[tile.species];
-        this.state.inventory.harvested[tile.species] += sp.yieldPerHarvest;
-        this.toast = { msg: `+${sp.yieldPerHarvest} ${sp.name}`, t: TOAST_S };
+        const newTotal = this.state.inventory.harvested[tile.species] + sp.yieldPerHarvest;
+        this.state.inventory.harvested[tile.species] = newTotal;
+        // Focus the HUD chip on what we just picked so the count is visible.
+        this.state.selectedSeed = tile.species;
+        this.toast = { msg: `+${sp.yieldPerHarvest} ${sp.name} (${newTotal})`, t: TOAST_S };
         tile.species = null;
         tile.stage = 0;
         tile.stageStartedAt = 0;
