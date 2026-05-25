@@ -9,6 +9,15 @@
 import { loadSettings } from './settings';
 
 let ctx: AudioContext | null = null;
+let master: GainNode | null = null;
+
+// Per-sound gain values are kept low so the relative mix stays clean
+// (a heavy threat rumble would otherwise drown out a cursor blip).
+// MASTER_GAIN scales the lot so the overall loudness suits the
+// device — mobile speakers are noticeably quieter than desktop.
+// Clamped per-sound to prevent clipping on long tones.
+const MASTER_GAIN = 2.5;
+const MAX_PEAK = 0.75;
 
 export function initAudio(): void {
   if (ctx) return;
@@ -16,6 +25,9 @@ export function initAudio(): void {
   if (!Ctor) return;
   try {
     ctx = new Ctor();
+    master = ctx.createGain();
+    master.gain.value = MASTER_GAIN;
+    master.connect(ctx.destination);
   } catch {
     /* user agent denied or unsupported */
   }
@@ -41,18 +53,20 @@ interface NoiseParams {
 }
 
 function tone(p: ToneParams): void {
-  if (!ctx) return;
+  if (!ctx || !master) return;
   if (!loadSettings().sfxEnabled) return;
   const start = ctx.currentTime + (p.delay ?? 0);
   const dur = p.duration;
-  const peak = p.gain ?? 0.1;
+  // Per-sound peak is capped so an over-eager value can't clip when
+  // the master gain multiplies it.
+  const peak = Math.min(MAX_PEAK, p.gain ?? 0.1);
   const attack = p.attack ?? 0.005;
 
   const g = ctx.createGain();
   g.gain.setValueAtTime(0, start);
   g.gain.linearRampToValueAtTime(peak, start + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-  g.connect(ctx.destination);
+  g.connect(master);
 
   const osc = ctx.createOscillator();
   osc.type = p.type;
@@ -66,11 +80,11 @@ function tone(p: ToneParams): void {
 }
 
 function noise(p: NoiseParams): void {
-  if (!ctx) return;
+  if (!ctx || !master) return;
   if (!loadSettings().sfxEnabled) return;
   const start = ctx.currentTime + (p.delay ?? 0);
   const dur = p.duration;
-  const peak = p.gain ?? 0.06;
+  const peak = Math.min(MAX_PEAK, p.gain ?? 0.06);
 
   const bufSize = Math.max(1, Math.floor(ctx.sampleRate * dur));
   const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
@@ -92,7 +106,7 @@ function noise(p: NoiseParams): void {
   g.gain.linearRampToValueAtTime(peak, start + 0.005);
   g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
 
-  src.connect(filter); filter.connect(g); g.connect(ctx.destination);
+  src.connect(filter); filter.connect(g); g.connect(master);
   src.start(start); src.stop(start + dur + 0.02);
 }
 
