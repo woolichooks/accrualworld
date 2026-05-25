@@ -12,6 +12,7 @@ import { pickPuzzle } from './puzzles';
 import { PuzzleScene, type PuzzleResult } from './puzzle';
 import { BrewBenchScene } from './brew';
 import { CodexScene } from './codex';
+import { StatusScene } from './status';
 import type { RunState, SpeciesId } from './types';
 import type { GardenScene } from './garden';
 
@@ -64,6 +65,11 @@ export class ConsoleMenu implements Scene {
       label: 'BREW   -  COMBINE LEAVES',
       hint: 'TURN HARVEST INTO POTIONS',
       action: (mc) => new BrewBenchScene(mc.state, mc.self),
+    },
+    {
+      label: 'STATUS -  EXPANDED VIEW',
+      hint: 'FULL SHELTER + INVENTORY',
+      action: (mc) => new StatusScene(mc.state, mc.self),
     },
     {
       label: 'CODEX  -  ARCHIVES',

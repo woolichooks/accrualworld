@@ -2,12 +2,14 @@
 // watering, and harvest. Saves on every state-changing action.
 
 import { drawText, textWidth } from './font';
+import { drawHeart, HEART_W } from './heart';
 import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import { saveRun } from './save';
 import { drawSeedIcon, drawTile, MUTATIONS, SPECIES_DATA } from './species';
 import { ConsoleMenu } from './menu';
 import type { Scene } from './scene';
+import { StatusScene } from './status';
 import { NEXT_PHASE, PHASE_SECONDS, paletteForPhase, phaseLabel } from './time';
 import { drawSkyClock, SKYCLOCK_W } from './sky';
 import { pickWonder } from './wonder';
@@ -199,6 +201,9 @@ export class GardenScene implements Scene {
     if (input.justPressed('start')) {
       return new ConsoleMenu(this.state, this);
     }
+    if (input.justPressed('tab')) {
+      return new StatusScene(this.state, this);
+    }
     // If a phase change queued a scene (e.g. wonder), return it.
     if (this.pendingScene) {
       const s = this.pendingScene;
@@ -243,52 +248,52 @@ export class GardenScene implements Scene {
     this.drawGrid(ctx, p);
     this.drawCursor(ctx, p);
     this.drawStockPanel(ctx, p);
-    this.drawStatsPanel(ctx, p);
     this.drawTileStatus(ctx, p);
     this.drawPrompt(ctx, p);
     if (this.toast) this.drawToast(ctx, p);
   }
 
-  // Shelter stats line. Each stat is dimmer when low (<=3) and blinks
-  // when critical (<=1) so the danger reads at a glance.
-  private drawStatsPanel(ctx: CanvasRenderingContext2D, p: Palette): void {
-    const y = GRID_Y + GRID_H * TILE_PX + 12;
-    const s = this.state.shelter;
-    const stats: [string, number][] = [
-      ['HUL', s.hull],
-      ['OXY', s.oxygen],
-      ['PWR', s.power],
-      ['H2O', this.state.inventory.water],
-    ];
-    const chunkW = Math.floor(SCREEN_W / stats.length);
-    for (let i = 0; i < stats.length; i++) {
-      const [label, val] = stats[i];
-      const txt = `${label} ${val}`;
-      const x = i * chunkW + Math.floor((chunkW - textWidth(txt)) / 2);
-      let color = p[3];
-      if (label !== 'H2O') {
-        if (val <= 1) color = (Math.floor(this.blink * 3) % 2 === 0) ? p[3] : p[1];
-        else if (val <= 3) color = p[2];
-        else if (val >= STAT_MAX) color = p[3];
-      }
-      drawText(ctx, txt, x, y, color);
-    }
-  }
-
   private drawHud(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.fillStyle = p[0];
     ctx.fillRect(0, 0, SCREEN_W, 12);
+
+    // Left: SOL
     drawText(ctx, `SOL ${this.state.sol}`, 2, 3, p[3]);
 
-    // Sky-clock widget centered horizontally so the animation reads as
-    // the focal element of the HUD. Phase label sits to its right.
+    // Right: compact status bar — 4 hearts with their numeric values.
+    // Order H/O/P/W from left to right; criticality is per-icon (the
+    // drawHeart helper blinks low stats). Press TAB for full status.
+    const stats = [
+      this.state.shelter.hull,
+      this.state.shelter.oxygen,
+      this.state.shelter.power,
+      Math.min(this.state.inventory.water, STAT_MAX),
+    ];
+    const rawValues = [
+      this.state.shelter.hull,
+      this.state.shelter.oxygen,
+      this.state.shelter.power,
+      this.state.inventory.water,
+    ];
+    const chunkW = 14; // heart(5) + gap(1) + 2-char count(7) + spacer(1)
+    const totalW = chunkW * stats.length;
+    const rightStart = SCREEN_W - totalW - 2;
+    for (let i = 0; i < stats.length; i++) {
+      const x = rightStart + i * chunkW;
+      drawHeart(ctx, x, 3, stats[i], STAT_MAX, this.blink, p);
+      const numText = `${rawValues[i]}`;
+      drawText(ctx, numText, x + HEART_W + 1, 3, p[3]);
+    }
+
+    // Center-left: sky-clock + phase label, positioned between SOL
+    // and the stats panel.
     const phase = phaseLabel(this.state.phase);
     const labelW = textWidth(phase);
     const groupW = SKYCLOCK_W + 3 + labelW;
-    const groupX = Math.floor((SCREEN_W - groupW) / 2);
+    const available = rightStart - 26;
+    const groupX = 26 + Math.floor((available - groupW) / 2);
     drawSkyClock(ctx, groupX, 1, this.state.phase, this.state.phaseTime, p);
     drawText(ctx, phase, groupX + SKYCLOCK_W + 3, 3, p[3]);
-    // (H2O moved into the shelter-stats row below the grid.)
   }
 
   // Compact stock row for all 8 species in a single line. Each chunk:
@@ -297,7 +302,8 @@ export class GardenScene implements Scene {
   // shown to keep this in 160px — the tile-status row and brew bench
   // both show the full name when needed.
   private drawStockPanel(ctx: CanvasRenderingContext2D, p: Palette): void {
-    const y = GRID_Y + GRID_H * TILE_PX + 4;
+    // ~8px below the grid for breathing room.
+    const y = GRID_Y + GRID_H * TILE_PX + 8;
     const chunkW = Math.floor(SCREEN_W / SPECIES.length); // 20px each
     for (let i = 0; i < SPECIES.length; i++) {
       const sp = SPECIES[i];
@@ -316,10 +322,12 @@ export class GardenScene implements Scene {
     }
   }
 
-  // Below the stats row: what's on the focused tile.
+  // Below the stock row: what's on the focused tile. Sits with a
+  // generous gap so the bottom of the garden feels uncrowded now
+  // that the stats panel has moved into the HUD.
   private drawTileStatus(ctx: CanvasRenderingContext2D, p: Palette): void {
     const tile = this.state.tiles[this.state.cursor.y * GRID_W + this.state.cursor.x];
-    const y = GRID_Y + GRID_H * TILE_PX + 22;
+    const y = GRID_Y + GRID_H * TILE_PX + 20;
     let label: string;
     if (!tile.species || tile.stage === 0) {
       label = 'TILE: EMPTY';
