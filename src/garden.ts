@@ -6,6 +6,8 @@ import { type Input } from './input';
 import { type Palette } from './palette';
 import { saveRun } from './save';
 import { drawSeedIcon, drawTile, SPECIES_DATA } from './species';
+import { ConsoleMenu } from './menu';
+import type { Scene } from './scene';
 import {
   GRID_H,
   GRID_W,
@@ -24,11 +26,6 @@ const GRID_Y = 14;
 
 // How long the harvest/plant toast stays on screen.
 const TOAST_S = 1.6;
-
-export interface Scene {
-  update(dt: number, input: Input): Scene | null;
-  draw(ctx: CanvasRenderingContext2D, p: Palette): void;
-}
 
 export class GardenScene implements Scene {
   private state: RunState;
@@ -123,6 +120,10 @@ export class GardenScene implements Scene {
     }
 
     if (changed) saveRun(this.state);
+
+    if (input.justPressed('start')) {
+      return new ConsoleMenu(this.state, this);
+    }
     return null;
   }
 

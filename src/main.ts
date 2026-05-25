@@ -2,7 +2,8 @@ import './style.css';
 import { Input } from './input';
 import { PALETTES, type PaletteName } from './palette';
 import { drawText, textWidth } from './font';
-import { GardenScene, type Scene } from './garden';
+import { GardenScene } from './garden';
+import type { Scene } from './scene';
 import { loadRun, newRun, clearRun } from './save';
 
 const SCREEN_W = 160;
