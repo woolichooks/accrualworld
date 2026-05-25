@@ -48,6 +48,16 @@ export const STAT_MAX = 10;
 // cycle to brew the matching defensive recipe.
 export const CRITICAL_SOLS_GRACE = 2;
 
+// How many ship-hull parts the colonist must salvage before they
+// can launch off Soil-9. Sources contributing one part each:
+//   - Surviving any sol (sol counter advance)
+//   - First time solving each puzzle template
+//   - First time brewing each recipe
+//   - First time witnessing each wonder
+// At SHIP_PARTS_TARGET, a LAUNCH option appears in the Colony
+// Console. Choosing it ends the run with a win cinematic.
+export const SHIP_PARTS_TARGET = 20;
+
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export interface DifficultySettings {
@@ -97,6 +107,8 @@ export interface RunState {
   // the stat is restored above 0. When any value reaches
   // CRITICAL_SOLS_GRACE, the run ends.
   criticalSols: { hull: number; oxygen: number; power: number };
+  // Salvaged ship-hull parts; win at SHIP_PARTS_TARGET.
+  shipParts: number;
   sol: number;             // colony day counter
   gameTime: number;        // accumulated seconds since run start
   // Day/night cycle

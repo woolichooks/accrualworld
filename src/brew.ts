@@ -108,11 +108,18 @@ export class BrewBenchScene implements Scene {
 
     const meta = loadMeta();
     const first = !meta.discoveredRecipes.includes(recipe.id);
-    if (first) meta.discoveredRecipes.push(recipe.id);
+    if (first) {
+      meta.discoveredRecipes.push(recipe.id);
+      // First brew of each recipe is a salvageable ship part.
+      this.state.shipParts += 1;
+      saveRun(this.state);
+    }
     saveMeta(meta);
 
     this.toast = {
-      msg: first ? `NEW: ${recipe.name}  ${reward}` : `${recipe.name}: ${reward}`,
+      msg: first
+        ? `NEW: ${recipe.name}  ${reward}  +PART`
+        : `${recipe.name}: ${reward}`,
       t: 2.4,
     };
     this.slots = [null, null, null];

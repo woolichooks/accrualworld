@@ -257,9 +257,11 @@ export class GardenScene implements Scene {
     // Toast the transition so the player notices.
     this.toast = { msg: phaseLabel(next), t: 1.4 };
     // Dawn advances the Sol counter (a new colony day) and is the
-    // tick point for the critical-stat grace counters.
+    // tick point for the critical-stat grace counters. Surviving a
+    // sol also salvages one ship-hull part.
     if (next === 'day' && prev === 'dawn') {
       this.state.sol += 1;
+      this.state.shipParts += 1;
       this.tickCriticalCounters();
     }
     // Entering night: roll one of wonder / threat / nothing.

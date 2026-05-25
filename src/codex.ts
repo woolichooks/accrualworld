@@ -20,7 +20,7 @@ import { THREATS } from './threat';
 import { RECIPES } from './recipes';
 import { MUTATIONS } from './species';
 import { wrap } from './text-wrap';
-import type { RunState, SpeciesId } from './types';
+import { SHIP_PARTS_TARGET, type RunState, type SpeciesId } from './types';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -253,6 +253,25 @@ export class CodexScene implements Scene {
     // INF — run stats
     const lm = meta.ledgerMarks;
     return [
+      {
+        title: 'MISSION',
+        detail: 'REBUILD SHIP HULL AND ESCAPE SOIL-9.',
+        locked: false,
+        full: [
+          'YOU CRASH-LANDED ON SOIL-9.',
+          'THE COLONY BIODOME HOLDS.',
+          '',
+          `SALVAGE ${SHIP_PARTS_TARGET} SHIP-HULL PARTS:`,
+          '  +1  SURVIVE EACH SOL',
+          '  +1  FIRST TIME SOLVING A PUZZLE',
+          '  +1  FIRST TIME BREWING A RECIPE',
+          '  +1  FIRST TIME WITNESSING A WONDER',
+          '',
+          'AT FULL HULL, A LAUNCH OPTION',
+          'APPEARS IN THE COLONY CONSOLE.',
+        ],
+      },
+      { title: 'SHIP HULL', detail: `${this.state.shipParts} / ${SHIP_PARTS_TARGET}`, locked: false },
       { title: 'CURRENT RUN', detail: `SOL ${this.state.sol}`, locked: false },
       { title: 'LEDGER MARKS', detail: `305:${lm['305']} 330:${lm['330']} 360:${lm['360']}`, locked: false },
       { title: 'STANDARDS LOGGED', detail: `${meta.codexSeen.length} / ${TEMPLATES.length}`, locked: false },

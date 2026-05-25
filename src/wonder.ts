@@ -82,6 +82,7 @@ export class MeteorShowerScene implements Scene {
       if (!meta.witnessedWonders.includes(MeteorShowerScene.ID)) {
         meta.witnessedWonders.push(MeteorShowerScene.ID);
         this.firstSighting = true;
+        this.state.shipParts += 1;
       }
       saveMeta(meta);
     }
@@ -230,6 +231,7 @@ export class FireflySwarmScene implements Scene {
       if (!meta.witnessedWonders.includes(FireflySwarmScene.ID)) {
         meta.witnessedWonders.push(FireflySwarmScene.ID);
         this.firstSighting = true;
+        this.state.shipParts += 1;
       }
       saveMeta(meta);
     }
@@ -306,6 +308,7 @@ export class TwinMoonsScene implements Scene {
       if (!meta.witnessedWonders.includes(TwinMoonsScene.ID)) {
         meta.witnessedWonders.push(TwinMoonsScene.ID);
         this.firstSighting = true;
+        this.state.shipParts += 1;
       }
       saveMeta(meta);
     }

@@ -8,7 +8,7 @@ import { drawHeart, HEART_W } from './heart';
 import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import type { Scene } from './scene';
-import { CRITICAL_SOLS_GRACE, DIFFICULTY, STAT_MAX, SPECIES, type RunState } from './types';
+import { CRITICAL_SOLS_GRACE, DIFFICULTY, SHIP_PARTS_TARGET, STAT_MAX, SPECIES, type RunState } from './types';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -87,8 +87,22 @@ export class StatusScene implements Scene {
       y += 9;
     }
 
-    // Inventory readout — seeds and leaves, compact.
+    // Ship hull progress — the colonist's escape goal.
     y += 4;
+    const partsText = `SHIP HULL ${this.state.shipParts}/${SHIP_PARTS_TARGET}`;
+    drawText(ctx, partsText, 4, y, p[3]);
+    // Mini-bar for the same value, aligned right.
+    const barX = 80, barW = 76;
+    const cells = SHIP_PARTS_TARGET;
+    const cellW = Math.max(1, Math.floor(barW / cells));
+    for (let c = 0; c < cells; c++) {
+      const filled = c < this.state.shipParts;
+      ctx.fillStyle = filled ? p[3] : p[1];
+      ctx.fillRect(barX + c * cellW, y + 1, Math.max(1, cellW - 1), 4);
+    }
+
+    // Inventory readout — seeds and leaves, compact.
+    y += 8;
     drawText(ctx, 'SEEDS', 4, y, p[2]);
     drawText(ctx, this.invLine(this.state.inventory.seeds), 30, y, p[3]);
     y += 8;
@@ -103,6 +117,8 @@ export class StatusScene implements Scene {
     const hint = 'A/B/TAB: CLOSE';
     drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[3]);
   }
+
+  // (Hull progress is rendered inside draw() above.)
 
   // Compact inventory line: e.g. "M4 S2 B0 C0 P1 A0 G0 L0". First
   // letter of species + count.
