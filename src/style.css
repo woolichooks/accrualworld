@@ -50,8 +50,20 @@ html, body {
 .handheld {
   --w: 540px;
   --bezel-texture: none;
+  /* Control sizes are variables so the mobile breakpoints below
+     can shrink everything proportionally instead of fighting
+     fixed pixel sizes. */
+  --dpad-size: 96px;
+  --dpad-btn: 32px;
+  --ab-btn: 44px;
+  --ab-gap: 14px;
+  --controls-pad-top: 22px;
+  --screen-w: 480px;
+  --screen-h: 432px;
+  --bezel-pad-x: 22px;
+  --bezel-pad-bottom: 28px;
   width: var(--w);
-  padding: 22px 22px 28px;
+  padding: 22px var(--bezel-pad-x) var(--bezel-pad-bottom);
   border-radius: 18px 18px 60px 18px;
   /* A faint vertical sheen sits on top of the procedural bezel
      texture so the shell still feels molded, just not plasticky. */
@@ -110,8 +122,8 @@ html, body {
 
 #screen {
   display: block;
-  width: 480px;   /* 160 * 3 */
-  height: 432px;  /* 144 * 3 */
+  width: var(--screen-w);
+  height: var(--screen-h);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   background: var(--c3);
@@ -126,7 +138,7 @@ html, body {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 12px;
-  padding: 22px 6px 6px;
+  padding: var(--controls-pad-top) 6px 6px;
   align-items: center;
 }
 
@@ -143,13 +155,14 @@ html, body {
 
 .dpad {
   position: relative;
-  width: 96px;
-  height: 96px;
+  width: var(--dpad-size);
+  height: var(--dpad-size);
   justify-self: start;
 }
 .dpad button {
   position: absolute;
-  width: 32px; height: 32px;
+  width: var(--dpad-btn);
+  height: var(--dpad-btn);
   background: linear-gradient(180deg, #3a3436, #1c1819);
   border: none;
   border-radius: 4px;
@@ -169,34 +182,36 @@ html, body {
     inset 0 -1px 0 rgba(255,255,255,.04);
   transform: translateY(1px);
 }
-.dpad .up    { top: 0;   left: 32px; border-radius: 4px 4px 0 0; }
-.dpad .down  { top: 64px; left: 32px; border-radius: 0 0 4px 4px; }
-.dpad .left  { top: 32px; left: 0;   border-radius: 4px 0 0 4px; }
-.dpad .right { top: 32px; left: 64px; border-radius: 0 4px 4px 0; }
+.dpad .up    { top: 0;                            left: var(--dpad-btn); border-radius: 4px 4px 0 0; }
+.dpad .down  { top: calc(var(--dpad-btn) * 2);    left: var(--dpad-btn); border-radius: 0 0 4px 4px; }
+.dpad .left  { top: var(--dpad-btn);              left: 0;                border-radius: 4px 0 0 4px; }
+.dpad .right { top: var(--dpad-btn);              left: calc(var(--dpad-btn) * 2); border-radius: 0 4px 4px 0; }
 .dpad .center {
   position: absolute;
-  top: 32px; left: 32px;
-  width: 32px; height: 32px;
+  top: var(--dpad-btn);
+  left: var(--dpad-btn);
+  width: var(--dpad-btn);
+  height: var(--dpad-btn);
   background: #1c1819;
   pointer-events: none;
 }
 
 .ab {
   display: flex;
-  gap: 14px;
+  gap: var(--ab-gap);
   justify-self: end;
   transform: rotate(-18deg);
   padding-right: 6px;
 }
 .ab button {
-  width: 44px;
-  height: 44px;
+  width: var(--ab-btn);
+  height: var(--ab-btn);
   border-radius: 50%;
   border: none;
   background: radial-gradient(circle at 35% 30%, #a83040 0%, var(--btn) 55%, var(--btn-edge) 100%);
   color: var(--label);
   font-family: inherit;
-  font-size: 14px;
+  font-size: calc(var(--ab-btn) * 0.32);
   cursor: pointer;
   box-shadow:
     inset 0 2px 0 rgba(255,255,255,.12),
@@ -244,13 +259,49 @@ html, body {
   gap: 20px;
 }
 
-/* Tighter layout on small screens — fall back to 2x then 1x scaling
-   so the screen still fits a phone without horizontal scroll. */
-@media (max-width: 580px) {
-  .handheld { --w: 360px; padding: 18px 18px 24px; }
-  #screen { width: 320px; height: 288px; } /* 2x */
+/* Mobile breakpoints. Bezel width scales to the viewport and the
+   D-pad / A-B variables shrink proportionally so the controls stay
+   inside the frame at any width down to ~320px. Screen drops to
+   integer 2x (320x288) on small phones and 1x (160x144) on the
+   tightest screens to preserve crisp pixel art. */
+@media (max-width: 700px) {
+  .handheld {
+    --w: min(380px, calc(100vw - 16px));
+    --dpad-size: 76px;
+    --dpad-btn: 24px;
+    --ab-btn: 36px;
+    --ab-gap: 12px;
+    --controls-pad-top: 18px;
+    --screen-w: 320px;
+    --screen-h: 288px;
+    --bezel-pad-x: 14px;
+    --bezel-pad-bottom: 22px;
+  }
+  .serial { font-size: 6px; letter-spacing: 0; }
 }
-@media (max-width: 380px) {
-  .handheld { --w: 200px; padding: 12px 12px 18px; }
-  #screen { width: 160px; height: 144px; } /* 1x */
+
+@media (max-width: 360px) {
+  .handheld {
+    --dpad-size: 60px;
+    --dpad-btn: 20px;
+    --ab-btn: 30px;
+    --ab-gap: 10px;
+    --controls-pad-top: 14px;
+    --screen-w: 240px;
+    --screen-h: 216px;
+    --bezel-pad-x: 10px;
+    --bezel-pad-bottom: 18px;
+  }
+  .serial { display: none; }
+}
+
+@media (max-width: 280px) {
+  .handheld {
+    --dpad-size: 48px;
+    --dpad-btn: 16px;
+    --ab-btn: 26px;
+    --ab-gap: 8px;
+    --screen-w: 160px;
+    --screen-h: 144px;
+  }
 }
