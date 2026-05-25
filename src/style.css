@@ -221,7 +221,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
 }
 
 /* Tighter layout on small screens — fall back to 2x then 1x scaling
