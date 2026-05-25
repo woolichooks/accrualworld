@@ -32,32 +32,6 @@ npm run build     # production build into ./dist
 npm run preview   # serve the production build locally
 ```
 
-## Deploy to Cloudflare Pages
-
-This is a pure static site, so Pages serves the contents of `dist/` directly.
-
-**One-time setup (via the Cloudflare dashboard):**
-
-1. Pages → *Create a project* → connect this Git repo.
-2. Framework preset: **Vite** (or *None*).
-3. Build command: `npm run build`
-4. Build output directory: `dist`
-5. Node version: `22` (set under *Environment variables* as `NODE_VERSION = 22`).
-
-Every push to the configured branch triggers an auto-deploy. PRs get preview deploys at `*.pages.dev` URLs.
-
-**Or via Wrangler (CLI):**
-
-```bash
-npm install -g wrangler
-npm run build
-wrangler pages deploy dist --project-name accrualworld
-```
-
-### Optional: social-share image
-
-The HTML references `/og.png` (1200×630) for OpenGraph / Twitter card previews. Drop a screenshot of the game in `public/og.png` and Pages will serve it automatically.
-
 ## Tech
 
 - Vite + TypeScript, no game engine
