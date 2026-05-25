@@ -109,6 +109,67 @@ export function getTheme(id: ThemeId): Theme {
   return THEMES[id] ?? THEMES.acrid;
 }
 
+// Convert "#rrggbb" to {r,g,b}. Used to build slightly-tinted versions
+// of the bezel color for the procedural texture.
+function rgb(hex: string): { r: number; g: number; b: number } {
+  return {
+    r: parseInt(hex.slice(1, 3), 16),
+    g: parseInt(hex.slice(3, 5), 16),
+    b: parseInt(hex.slice(5, 7), 16),
+  };
+}
+function tint(hex: string, dr: number, dg: number, db: number): string {
+  const c = rgb(hex);
+  const clamp = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+  const r = clamp(c.r + dr), g = clamp(c.g + dg), b = clamp(c.b + db);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// Cache textures per theme so we don't regenerate on every cycle.
+const TEXTURE_CACHE: Partial<Record<ThemeId, string>> = {};
+
+// Procedural injection-molded-plastic grain. Two passes:
+//   - clusters of darker grain (chunkier specks)
+//   - finer scattered single-pixel highlights
+// Tiles 64x64 — random enough that the eye doesn't catch the seam.
+function generateBezelTexture(t: Theme): string {
+  const cached = TEXTURE_CACHE[t.id];
+  if (cached) return cached;
+  const size = 64;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  if (!ctx) return '';
+
+  ctx.fillStyle = t.bezel.main;
+  ctx.fillRect(0, 0, size, size);
+
+  // Darker grain (subtle pits). ~5% coverage with occasional doubles.
+  const dark = tint(t.bezel.main, -18, -18, -18);
+  ctx.fillStyle = dark;
+  const darkCount = Math.floor(size * size * 0.055);
+  for (let i = 0; i < darkCount; i++) {
+    const x = Math.floor(Math.random() * size);
+    const y = Math.floor(Math.random() * size);
+    ctx.fillRect(x, y, 1, 1);
+    if (Math.random() < 0.18) ctx.fillRect((x + 1) % size, y, 1, 1);
+  }
+
+  // Lighter speckles for a hint of sparkle.
+  const light = tint(t.bezel.main, 18, 18, 18);
+  ctx.fillStyle = light;
+  const lightCount = Math.floor(size * size * 0.025);
+  for (let i = 0; i < lightCount; i++) {
+    const x = Math.floor(Math.random() * size);
+    const y = Math.floor(Math.random() * size);
+    ctx.fillRect(x, y, 1, 1);
+  }
+
+  const url = c.toDataURL();
+  TEXTURE_CACHE[t.id] = url;
+  return url;
+}
+
 // Apply a theme's bezel colors via CSS custom properties. Screen
 // palettes are resolved per draw via getPalette() in palette.ts.
 export function applyThemeBezel(id: ThemeId): void {
@@ -129,4 +190,7 @@ export function applyThemeBezel(id: ThemeId): void {
     root.style.removeProperty('--btn');
     root.style.removeProperty('--btn-edge');
   }
+  // Procedural plastic-grain texture. Generated lazily and cached.
+  const tex = generateBezelTexture(t);
+  if (tex) root.style.setProperty('--bezel-texture', `url("${tex}")`);
 }

@@ -49,11 +49,20 @@ html, body {
 /* ---- Handheld bezel ---- */
 .handheld {
   --w: 540px;
+  --bezel-texture: none;
   width: var(--w);
   padding: 22px 22px 28px;
   border-radius: 18px 18px 60px 18px;
-  background:
-    linear-gradient(180deg, var(--bezel-light) 0%, var(--bezel) 8%, var(--bezel) 92%, var(--bezel-edge) 100%);
+  /* A faint vertical sheen sits on top of the procedural bezel
+     texture so the shell still feels molded, just not plasticky. */
+  background-color: var(--bezel);
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,.06) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 80%, rgba(0,0,0,.18) 100%),
+    var(--bezel-texture);
+  background-repeat: no-repeat, repeat;
+  background-size: 100% 100%, 64px 64px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.06),
     inset 0 -2px 0 rgba(0,0,0,.4),
