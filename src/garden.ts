@@ -296,50 +296,62 @@ export class GardenScene implements Scene {
     drawText(ctx, phase, groupX + SKYCLOCK_W + 3, 3, p[3]);
   }
 
-  // Compact stock row for all 8 species in a single line. Each chunk:
-  // <icon> <seeds>/<leaves>. The currently selected seed renders in
-  // p[3] with a tiny underline; others in p[2]. Full names are not
-  // shown to keep this in 160px — the tile-status row and brew bench
-  // both show the full name when needed.
-  private drawStockPanel(ctx: CanvasRenderingContext2D, p: Palette): void {
-    // ~8px below the grid for breathing room.
-    const y = GRID_Y + GRID_H * TILE_PX + 8;
-    const chunkW = Math.floor(SCREEN_W / SPECIES.length); // 20px each
-    for (let i = 0; i < SPECIES.length; i++) {
-      const sp = SPECIES[i];
-      const seeds = this.state.inventory.seeds[sp];
-      const leaves = this.state.inventory.harvested[sp];
-      const selected = this.state.selectedSeed === sp;
-      const x = i * chunkW + 1;
-      drawSeedIcon(ctx, x, y, sp, p);
-      const text = `${seeds}/${leaves}`;
-      drawText(ctx, text, x + 6, y, selected ? p[3] : p[2]);
-      if (selected) {
-        // Underline marker so the selection reads at a glance.
-        ctx.fillStyle = p[3];
-        ctx.fillRect(x, y + 7, chunkW - 2, 1);
-      }
-    }
-  }
-
-  // Below the stock row: what's on the focused tile. Sits with a
-  // generous gap so the bottom of the garden feels uncrowded now
-  // that the stats panel has moved into the HUD.
+  // Tile-status line — drawn first under the grid so the player's
+  // attention lands here. Shows what's on the focused tile plus the
+  // currently selected seed (so cycling with SELECT has an obvious
+  // anchor for what got chosen).
   private drawTileStatus(ctx: CanvasRenderingContext2D, p: Palette): void {
     const tile = this.state.tiles[this.state.cursor.y * GRID_W + this.state.cursor.x];
-    const y = GRID_Y + GRID_H * TILE_PX + 20;
-    let label: string;
+    const y = GRID_Y + GRID_H * TILE_PX + 4;
+    let tileLabel: string;
     if (!tile.species || tile.stage === 0) {
-      label = 'TILE: EMPTY';
+      tileLabel = 'TILE: EMPTY';
     } else {
       const stageName = ['', 'SEED', 'SPROUT', 'GROWING', 'MATURE'][tile.stage];
       const watered = tile.lastWateredAt > tile.stageStartedAt ? ' (WET)' : '';
       const name = tile.mutated
         ? MUTATIONS[tile.species].name
         : SPECIES_DATA[tile.species].name;
-      label = `TILE: ${name} ${stageName}${watered}`;
+      tileLabel = `TILE: ${name} ${stageName}${watered}`;
     }
-    drawText(ctx, label, 2, y, p[3]);
+    drawText(ctx, tileLabel, 2, y, p[3]);
+
+    // Right-aligned: currently selected seed full name so the player
+    // always knows what's planted on the next A press.
+    const selName = SPECIES_DATA[this.state.selectedSeed].name;
+    const selText = `SEED: ${selName}`;
+    drawText(ctx, selText, SCREEN_W - 2 - textWidth(selText), y, p[3]);
+  }
+
+  // Stock panel — two rows of four species (so seed/harvest counts
+  // have generous room each). Per chunk: <icon> <name> <seeds>/<leaves>.
+  // Selected species renders in p[3]; others in p[2].
+  private drawStockPanel(ctx: CanvasRenderingContext2D, p: Palette): void {
+    const rowY = [
+      GRID_Y + GRID_H * TILE_PX + 14,
+      GRID_Y + GRID_H * TILE_PX + 22,
+    ];
+    const perRow = 4;
+    const chunkW = Math.floor(SCREEN_W / perRow); // 40px each
+    for (let i = 0; i < SPECIES.length; i++) {
+      const sp = SPECIES[i];
+      const row = Math.floor(i / perRow);
+      const col = i % perRow;
+      const x = col * chunkW + 1;
+      const y = rowY[row];
+      const seeds = this.state.inventory.seeds[sp];
+      const leaves = this.state.inventory.harvested[sp];
+      const selected = this.state.selectedSeed === sp;
+
+      drawSeedIcon(ctx, x, y, sp, p);
+      const name = SPECIES_DATA[sp].name.slice(0, 4);
+      const color = selected ? p[3] : p[2];
+      drawText(ctx, name, x + 7, y, color);
+      const countText = `${seeds}/${leaves}`;
+      // Right-align the count within the chunk for visual alignment.
+      const cx = (col + 1) * chunkW - textWidth(countText) - 2;
+      drawText(ctx, countText, cx, y, color);
+    }
   }
 
   private drawGrid(ctx: CanvasRenderingContext2D, p: Palette): void {
