@@ -142,12 +142,14 @@ export class GardenScene implements Scene {
 
     drawText(ctx, `SOL ${this.state.sol}`, 2, 3, p[3]);
 
-    // Selected seed chip + count
+    // Selected seed chip: <icon> <name> S:<seeds> L:<harvested leaves>
     const seed = this.state.selectedSeed;
-    const count = this.state.inventory.seeds[seed];
-    const chipX = 50;
+    const seedCount = this.state.inventory.seeds[seed];
+    const leafCount = this.state.inventory.harvested[seed];
+    const chipX = 36;
     drawSeedIcon(ctx, chipX, 3, seed, p);
-    drawText(ctx, `${SPECIES_DATA[seed].name} ${count}`, chipX + 7, 3, p[3]);
+    const chipText = `${SPECIES_DATA[seed].name} ${seedCount}/${leafCount}`;
+    drawText(ctx, chipText, chipX + 7, 3, p[3]);
 
     // Water counter, right-aligned
     const wText = `H2O ${this.state.inventory.water}`;
