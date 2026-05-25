@@ -6,6 +6,7 @@
 // `onClose` callback (used by the Vault to grant rewards).
 
 import { drawText, textWidth } from './font';
+import { drawText5, LINE5_H } from './font5';
 import { type Input } from './input';
 import { type Palette } from './palette';
 import { saveMeta, type MetaState } from './meta';
@@ -15,7 +16,8 @@ import type { PuzzleInstance } from './puzzles/types';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
-const TEXT_MAX_CHARS = 38; // ~152px / 4px-per-char with 4px margin each side
+// 5x7 font: 6px advance. Usable width 160 - 8 margins = 152 -> ~25 chars/line.
+const TEXT_MAX_CHARS = 25;
 
 export type PuzzleResult =
   | { kind: 'correct'; firstSolve: boolean }
@@ -153,25 +155,25 @@ export class PuzzleScene implements Scene {
     // Scenario
     let y = 14;
     for (const ln of this.scenarioLines) {
-      drawText(ctx, ln, 4, y, p[3]);
-      y += 7;
+      drawText5(ctx, ln, 4, y, p[3]);
+      y += LINE5_H;
     }
 
     // Question prompt
     y += 2;
-    drawText(ctx, this.puzzle.question, 4, y, p[2]);
-    y += 8;
+    drawText5(ctx, this.puzzle.question, 4, y, p[2]);
+    y += LINE5_H + 1;
 
     // Choices
     for (let i = 0; i < this.puzzle.choices.length; i++) {
       const c = this.puzzle.choices[i];
       const focused = i === this.choiceIdx;
       const color = focused ? p[3] : p[2];
-      drawText(ctx, c.label, 14, y, color);
+      drawText5(ctx, c.label, 14, y, color);
       if (focused && Math.floor(this.t * 3) % 2 === 0) {
-        drawText(ctx, '>', 6, y, p[3]);
+        drawText5(ctx, '>', 6, y, p[3]);
       }
-      y += 8;
+      y += LINE5_H + 1;
     }
 
     const hint = 'A:CONFIRM   B:CANCEL';
@@ -180,12 +182,12 @@ export class PuzzleScene implements Scene {
 
   private drawFeedback(ctx: CanvasRenderingContext2D, p: Palette): void {
     const verdict = this.wasCorrect ? 'CORRECT' : 'INCORRECT';
-    drawText(ctx, verdict, 4, 16, p[3]);
+    drawText5(ctx, verdict, 4, 16, p[3]);
 
-    let y = 26;
+    let y = 16 + LINE5_H + 2;
     for (const ln of this.feedbackLines) {
-      drawText(ctx, ln, 4, y, p[3]);
-      y += 7;
+      drawText5(ctx, ln, 4, y, p[3]);
+      y += LINE5_H;
     }
 
     if (this.wasCorrect) {
@@ -194,8 +196,8 @@ export class PuzzleScene implements Scene {
         .filter(([, n]) => n && n > 0)
         .map(([sp, n]) => `+${n} ${sp.toUpperCase()}`);
       if (parts.length) {
-        y += 4;
-        drawText(ctx, 'REWARD: ' + parts.join('  '), 4, y, p[3]);
+        y += 3;
+        drawText5(ctx, 'REWARD: ' + parts.join('  '), 4, y, p[3]);
       }
     }
 
@@ -204,11 +206,11 @@ export class PuzzleScene implements Scene {
   }
 
   private drawCodex(ctx: CanvasRenderingContext2D, p: Palette): void {
-    drawText(ctx, 'CODEX OF STANDARDS', 4, 16, p[3]);
-    let y = 26;
+    drawText5(ctx, 'CODEX OF STANDARDS', 4, 16, p[3]);
+    let y = 16 + LINE5_H + 2;
     for (const ln of this.codexLines) {
-      drawText(ctx, ln, 4, y, p[3]);
-      y += 7;
+      drawText5(ctx, ln, 4, y, p[3]);
+      y += LINE5_H;
     }
     const hint = 'A/B: CLOSE';
     drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[3]);

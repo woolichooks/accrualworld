@@ -47,14 +47,12 @@ export const inv_lcnrv_t1: PuzzleTemplate = {
       tier: 1,
       header: 'ASC 330 - INVENTORY CLOSE',
       scenario:
-        `SOL ${sol} - MONTH-END, BIODOME 3.\n` +
-        `QUARTERMASTER VEY FLAGGED A SEED LOT.\n` +
+        `SOL ${sol} - MONTH-END.\n` +
+        `VEY FLAGGED A SEED LOT.\n` +
         `\n` +
-        `COST: $${cost}/UNIT.\n` +
-        `TRADE POST PRICE: $${sp}/UNIT.\n` +
-        `DECONTAM + CRATING: $${cts}/UNIT.\n` +
-        `\n` +
-        `DIRECTOR HALE NEEDS THE NUMBER.`,
+        `COST       $${cost}/UNIT\n` +
+        `TRADE PRICE $${sp}/UNIT\n` +
+        `DECONTAM    $${cts}/UNIT`,
       question: 'CARRY EACH UNIT AT:',
       choices,
       feedbackCorrect:
