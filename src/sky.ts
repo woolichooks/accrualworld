@@ -33,10 +33,6 @@ export function drawSkyClock(
   phaseTime: number,
   p: Palette,
 ): void {
-  // Horizon line.
-  ctx.fillStyle = p[2];
-  ctx.fillRect(x, y + HORIZON_Y, SKYCLOCK_W, 1);
-
   // Arc — dotted; sample enough points that pixels don't have gaps.
   ctx.fillStyle = p[1];
   const steps = 36;
