@@ -2,8 +2,57 @@
 // against the active 4-color palette so they recolor for free with the
 // palette system. All sprites fit inside an 18x18 tile with a 1px margin.
 
-import type { SpeciesId, GrowthStage } from './types';
+import { STAT_MAX, type SpeciesId, type GrowthStage, type RunState } from './types';
 import type { Palette } from './palette';
+
+// Alien mutations. Each species has one. Rolled by wonders/threats on
+// each currently-growing plant. A mutated plant still yields a leaf on
+// harvest plus the mutation's stat bonus.
+export interface Mutation {
+  id: string;
+  name: string;           // display label
+  harvestBonus: string;   // toast-friendly summary
+  apply(state: RunState): void;
+}
+
+const clamp = (n: number) => Math.min(STAT_MAX, n);
+
+export const MUTATIONS: Record<SpeciesId, Mutation> = {
+  mint: {
+    id: 'palemint',
+    name: 'PALEMINT',
+    harvestBonus: '+2 OXY',
+    apply: (s) => { s.shelter.oxygen = clamp(s.shelter.oxygen + 2); },
+  },
+  sunflower: {
+    id: 'lumenroot',
+    name: 'LUMENROOT',
+    harvestBonus: '+2 PWR',
+    apply: (s) => { s.shelter.power = clamp(s.shelter.power + 2); },
+  },
+  basil: {
+    id: 'ironleaf',
+    name: 'IRONLEAF',
+    harvestBonus: '+2 HUL',
+    apply: (s) => { s.shelter.hull = clamp(s.shelter.hull + 2); },
+  },
+};
+
+// Roll mutation independently on each growing plant. Returns the
+// number that newly mutated this call. Plants already mutated, empty,
+// or harvestable (stage 4) are skipped.
+export function mutateGardenPlants(state: RunState, chance: number): number {
+  let n = 0;
+  for (const tile of state.tiles) {
+    if (!tile.species || tile.mutated) continue;
+    if (tile.stage === 0 || tile.stage === 4) continue;
+    if (Math.random() < chance) {
+      tile.mutated = true;
+      n++;
+    }
+  }
+  return n;
+}
 
 export interface Species {
   id: SpeciesId;
@@ -24,6 +73,8 @@ export const SPECIES_DATA: Record<SpeciesId, Species> = {
 
 // Draw a tile's contents at top-left (x, y) into an 18x18 area.
 // `watered` darkens the soil; `stage` selects what plant art to draw.
+// `mutated` adds a twinkling sparkle pixel. `blink` is a free-running
+// clock (typically the garden's blink time) used to animate the sparkle.
 export function drawTile(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -31,6 +82,8 @@ export function drawTile(
   species: SpeciesId | null,
   stage: GrowthStage,
   watered: boolean,
+  mutated: boolean,
+  blink: number,
   p: Palette,
 ): void {
   // Soil bed
@@ -100,6 +153,20 @@ export function drawTile(
         ctx.fillRect(cx - 2, base - 8, 5, 1);
         ctx.fillRect(cx - 1, base - 9, 3, 1);
         break;
+    }
+  }
+
+  // Alien sparkle for mutated plants — a 1px twinkle that hops around
+  // the plant on a slow blink cycle. Cheap and reads instantly.
+  if (mutated) {
+    const phase = Math.floor(blink * 3) % 4;
+    if (phase !== 3) {
+      const offsets: [number, number][] = [
+        [-3, -5], [3, -6], [2, -3], [-2, -2],
+      ];
+      const [dx, dy] = offsets[phase];
+      ctx.fillStyle = p[3];
+      ctx.fillRect(cx + dx, base + dy, 1, 1);
     }
   }
 }

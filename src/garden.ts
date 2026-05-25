@@ -5,7 +5,7 @@ import { drawText, textWidth } from './font';
 import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import { saveRun } from './save';
-import { drawSeedIcon, drawTile, SPECIES_DATA } from './species';
+import { drawSeedIcon, drawTile, MUTATIONS, SPECIES_DATA } from './species';
 import { ConsoleMenu } from './menu';
 import type { Scene } from './scene';
 import { NEXT_PHASE, PHASE_SECONDS, paletteForPhase, phaseLabel } from './time';
@@ -163,11 +163,18 @@ export class GardenScene implements Scene {
         this.state.inventory.harvested[tile.species] = newTotal;
         // Focus the HUD chip on what we just picked so the count is visible.
         this.state.selectedSeed = tile.species;
-        this.toast = { msg: `+${sp.yieldPerHarvest} ${sp.name} (${newTotal})`, t: TOAST_S };
+        let msg = `+${sp.yieldPerHarvest} ${sp.name} (${newTotal})`;
+        if (tile.mutated) {
+          const m = MUTATIONS[tile.species];
+          m.apply(this.state);
+          msg = `${m.name}! ${m.harvestBonus}`;
+        }
+        this.toast = { msg, t: TOAST_S };
         tile.species = null;
         tile.stage = 0;
         tile.stageStartedAt = 0;
         tile.lastWateredAt = 0;
+        tile.mutated = false;
         changed = true;
       }
     }
@@ -317,7 +324,10 @@ export class GardenScene implements Scene {
     } else {
       const stageName = ['', 'SEED', 'SPROUT', 'GROWING', 'MATURE'][tile.stage];
       const watered = tile.lastWateredAt > tile.stageStartedAt ? ' (WET)' : '';
-      label = `TILE: ${SPECIES_DATA[tile.species].name} ${stageName}${watered}`;
+      const name = tile.mutated
+        ? MUTATIONS[tile.species].name
+        : SPECIES_DATA[tile.species].name;
+      label = `TILE: ${name} ${stageName}${watered}`;
     }
     drawText(ctx, label, 2, y, p[3]);
   }
@@ -334,6 +344,8 @@ export class GardenScene implements Scene {
           tile.species,
           tile.stage,
           isWatered,
+          tile.mutated,
+          this.blink,
           p,
         );
       }
@@ -358,20 +370,26 @@ export class GardenScene implements Scene {
 
   private drawPrompt(ctx: CanvasRenderingContext2D, p: Palette): void {
     const tile = this.state.tiles[this.state.cursor.y * GRID_W + this.state.cursor.x];
-    let a = '';
-    let b = '';
+
+    // Always label the buttons by their *purpose* — the player learns
+    // what B does even before they stand on a plant. Dim when the
+    // action isn't currently available.
+    let a: string;
+    let aActive: boolean;
     if (tile.stage === 0) {
       a = `A:PLANT ${SPECIES_DATA[this.state.selectedSeed].name}`;
+      aActive = this.state.inventory.seeds[this.state.selectedSeed] > 0;
     } else if (tile.stage === 4) {
       a = 'A:HARVEST';
+      aActive = true;
     } else {
-      a = 'A:--';
+      a = 'A:GROWING';
+      aActive = false;
     }
-    if (tile.species && tile.stage > 0 && tile.stage < 4) {
-      b = 'B:WATER';
-    } else {
-      b = 'B:--';
-    }
+    const b = 'B:WATER';
+    const bActive =
+      !!(tile.species && tile.stage > 0 && tile.stage < 4) &&
+      this.state.inventory.water > 0;
 
     // Two-line footer: action prompts on top, helper hints below.
     const y1 = SCREEN_H - 16;
@@ -379,8 +397,8 @@ export class GardenScene implements Scene {
     ctx.fillStyle = p[0];
     ctx.fillRect(0, y1 - 2, SCREEN_W, 18);
 
-    drawText(ctx, a, 2, y1, p[3]);
-    drawText(ctx, b, SCREEN_W - 2 - textWidth(b), y1, p[3]);
+    drawText(ctx, a, 2, y1, aActive ? p[3] : p[2]);
+    drawText(ctx, b, SCREEN_W - 2 - textWidth(b), y1, bActive ? p[3] : p[2]);
 
     // Helper hints. SELECT hint is always shown. When the currently
     // selected seed is out, the START hint blinks to draw the eye

@@ -12,6 +12,10 @@ export interface Tile {
   stageStartedAt: number;
   // Game-time seconds of the last watering (0 if never).
   lastWateredAt: number;
+  // Alien mutations are rolled by wonders and threats. A mutated
+  // plant sparkles in the grid and grants its species' stat bonus
+  // when harvested (in addition to the regular leaf yield).
+  mutated: boolean;
 }
 
 export interface Inventory {

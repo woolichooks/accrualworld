@@ -12,6 +12,7 @@ import type { Palette, PaletteName } from './palette';
 import { loadMeta, saveMeta } from './meta';
 import { saveRun } from './save';
 import type { Scene } from './scene';
+import { mutateGardenPlants } from './species';
 import type { RunState } from './types';
 
 const SCREEN_W = 160;
@@ -39,6 +40,7 @@ export class MeteorShowerScene implements Scene {
   private applied = false;
   private rewardWater = 2;
   private firstSighting = false;
+  private mutatedCount = 0;
 
   constructor(state: RunState, prev: Scene) {
     this.state = state;
@@ -71,6 +73,8 @@ export class MeteorShowerScene implements Scene {
     if (!this.applied && this.t > this.duration - 1.0) {
       this.applied = true;
       this.state.inventory.water += this.rewardWater;
+      // Cosmic radiation from the shower mutates some plants.
+      this.mutatedCount = mutateGardenPlants(this.state, 0.35);
       saveRun(this.state);
       const meta = loadMeta();
       if (!meta.witnessedWonders.includes(MeteorShowerScene.ID)) {
@@ -144,6 +148,7 @@ export class MeteorShowerScene implements Scene {
     if (this.t > this.duration - 1.0) {
       const lines: string[] = [];
       lines.push(`+${this.rewardWater} WATER COLLECTED`);
+      if (this.mutatedCount > 0) lines.push(`${this.mutatedCount} PLANT(S) MUTATED`);
       if (this.firstSighting) lines.push('NEW SIGHTING LOGGED');
       const boxH = lines.length * LINE5_H + 6;
       const boxW = 124;

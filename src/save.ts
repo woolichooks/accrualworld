@@ -6,7 +6,7 @@ import { GRID_W, GRID_H, type RunState, type Tile } from './types';
 const KEY = 'accrualworld.run.v1';
 
 export function emptyTile(): Tile {
-  return { species: null, stage: 0, stageStartedAt: 0, lastWateredAt: 0 };
+  return { species: null, stage: 0, stageStartedAt: 0, lastWateredAt: 0, mutated: false };
 }
 
 export function newRun(): RunState {
@@ -46,6 +46,8 @@ export function loadRun(): RunState | null {
     data.phaseTime ??= 0;
     // Shelter stats added in milestone 6.
     data.shelter ??= { hull: 10, oxygen: 10, power: 10 };
+    // Mutations added in milestone 6 polish — backfill `mutated:false`.
+    for (const t of data.tiles) t.mutated ??= false;
     return data;
   } catch {
     return null;

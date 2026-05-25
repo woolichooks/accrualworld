@@ -13,6 +13,7 @@ import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import { saveRun } from './save';
 import type { Scene } from './scene';
+import { mutateGardenPlants } from './species';
 import type { RunState, Shelter } from './types';
 import { GameOverScene } from './gameover';
 
@@ -60,6 +61,7 @@ export class ThreatScene implements Scene {
   private t = 0;
   private duration = 5.5;
   private applied = false;
+  private mutatedCount = 0;
   // Random shake/streak coords for the cinematic.
   private flashes: { x: number; y: number; life: number }[] = [];
   private spawnAccum = 0;
@@ -93,6 +95,8 @@ export class ThreatScene implements Scene {
     if (!this.applied && this.t > this.duration - 1.0) {
       this.applied = true;
       this.threat.apply(this.state.shelter);
+      // Plants adapt under stress — some mutate in response.
+      this.mutatedCount = mutateGardenPlants(this.state, 0.35);
       saveRun(this.state);
     }
 
@@ -128,6 +132,7 @@ export class ThreatScene implements Scene {
     // Damage card at the end
     if (this.t > this.duration - 1.0) {
       const lines = [this.threat.damageMsg];
+      if (this.mutatedCount > 0) lines.push(`${this.mutatedCount} PLANT(S) MUTATED`);
       const boxH = lines.length * LINE5_H + 6;
       const boxW = 100;
       const bx = Math.floor((SCREEN_W - boxW) / 2);
