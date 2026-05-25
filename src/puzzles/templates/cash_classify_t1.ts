@@ -17,39 +17,49 @@ interface Item {
 
 const POOL: Item[] = [
   {
-    desc: 'OPERATING CREDITS IN THE COLONY BANK ACCOUNT.',
+    desc: 'OPERATING FUNDS IN THE COLONY BANK ACCOUNT.',
     answer: 'CASH',
-    rationale: 'DEMAND DEPOSITS ARE CASH.',
+    rationale: 'A REGULAR BANK ACCOUNT IS CASH.',
   },
   {
-    desc: '60-DAY FEDERATION T-BILLS, BOUGHT 20 SOLS AGO.',
-    answer: 'CASH EQUIVALENT',
-    rationale: 'ORIGINAL MATURITY UNDER 3 MONTHS.',
-  },
-  {
-    desc: '6-MONTH FUEL-BOND CD PURCHASED LAST WEEK.',
-    answer: 'NEITHER',
-    rationale: 'ORIGINAL MATURITY EXCEEDS 3 MONTHS.',
-  },
-  {
-    desc: '50K CREDITS HELD IN ESCROW FOR ARBITRATION.',
-    answer: 'RESTRICTED CASH',
-    rationale: 'USE IS LEGALLY CONTRAINED.',
+    desc: 'CHECKING ACCOUNT, AVAILABLE ANY TIME.',
+    answer: 'CASH',
+    rationale: 'SPENDABLE ON DEMAND = CASH.',
   },
   {
     desc: 'PETTY CASH DRAWER IN THE BIODOME OFFICE.',
     answer: 'CASH',
-    rationale: 'CURRENCY ON HAND IS CASH.',
+    rationale: 'PHYSICAL CURRENCY ON HAND IS CASH.',
   },
   {
-    desc: 'BOND SINKING FUND, RESERVED FOR DEBT REPAYMENT.',
-    answer: 'RESTRICTED CASH',
-    rationale: 'COMMITTED TO A SPECIFIC PURPOSE.',
+    desc: '60-DAY TREASURY NOTE. BOUGHT 20 SOLS AGO.',
+    answer: 'CASH EQUIVALENT',
+    rationale: 'BOUGHT WITH 60 DAYS LEFT < 3 MONTHS.',
   },
   {
-    desc: '18-MONTH OUTPOST BOND PURCHASED YESTERDAY.',
+    desc: '30-DAY MONEY MARKET FUND, BOUGHT TODAY.',
+    answer: 'CASH EQUIVALENT',
+    rationale: 'BOUGHT WITH 30 DAYS LEFT < 3 MONTHS.',
+  },
+  {
+    desc: '6-MONTH SAVINGS BOND, BOUGHT LAST WEEK.',
     answer: 'NEITHER',
-    rationale: 'TOO LONG TO QUALIFY AS AN EQUIVALENT.',
+    rationale: 'BOUGHT WITH 6 MONTHS LEFT - TOO LONG.',
+  },
+  {
+    desc: '18-MONTH OUTPOST BOND, BOUGHT YESTERDAY.',
+    answer: 'NEITHER',
+    rationale: 'WAY MORE THAN 3 MONTHS LEFT.',
+  },
+  {
+    desc: '50K CREDITS LOCKED FOR A PENDING LAWSUIT.',
+    answer: 'RESTRICTED CASH',
+    rationale: 'YOU CANT SPEND IT - ITS RESTRICTED.',
+  },
+  {
+    desc: 'FUNDS HELD ONLY FOR DEBT REPAYMENT.',
+    answer: 'RESTRICTED CASH',
+    rationale: 'EARMARKED FOR ONE PURPOSE = RESTRICTED.',
   },
 ];
 
@@ -59,7 +69,9 @@ export const cash_classify_t1: PuzzleTemplate = {
   tier: 1,
   displayName: 'ASC 305 - CASH (T1)',
   blurb: 'CASH / EQUIVALENT / RESTRICTED',
-  hint: 'CASH EQUIVALENT = ORIGINAL MATURITY OF 3 MONTHS OR LESS.',
+  hint:
+    'SPENDABLE NOW = CASH. LIQUID UNDER 3 MONTHS = EQUIVALENT. ' +
+    'LOCKED FOR ONE PURPOSE = RESTRICTED. ELSE NEITHER.',
   staticCodex: {
     citation: 'ASC 305-10 / ASC 230-10-20',
     excerpt:
@@ -83,10 +95,10 @@ export const cash_classify_t1: PuzzleTemplate = {
       header: 'ASC 305 - TREASURY RECON',
       scenario:
         `SOL ${sol} - TREASURY RECON.\n` +
-        `CFO HALE WANTS THIS TAGGED.\n` +
+        `CFO HALE WANTS THIS CLASSIFIED.\n` +
         `\n` +
         item.desc,
-      questions: [{ kind: 'mc', prompt: 'TAG FOR THE BALANCE SHEET:', choices }],
+      questions: [{ kind: 'mc', prompt: 'WHICH CATEGORY?', choices }],
       feedbackCorrect: `FILED AS ${item.answer}. ${item.rationale}`,
       feedbackIncorrect:
         `HALE FROWNS. CORRECT TAG IS ${item.answer}. ` +
