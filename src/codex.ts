@@ -112,8 +112,13 @@ export class CodexScene implements Scene {
       const entries = this.entriesFor(TAB_ORDER[this.tabIdx]);
       if (this.selectedIdx < entries.length - 1) this.selectedIdx += 1;
     }
-    // Auto-scroll so the focused entry stays visible.
+    // Auto-scroll so the focused entry stays visible. Two directions:
+    // selection went above the viewport, or below it.
+    const entries = this.entriesFor(TAB_ORDER[this.tabIdx]);
     if (this.selectedIdx < this.scrollOffset) this.scrollOffset = this.selectedIdx;
+    while (this.selectedIdx > this.lastVisibleIndex(entries)) {
+      this.scrollOffset += 1;
+    }
     if (input.justPressed('a')) {
       const entries = this.entriesFor(TAB_ORDER[this.tabIdx]);
       const e = entries[this.selectedIdx];
@@ -134,6 +139,21 @@ export class CodexScene implements Scene {
       detail,
       height: (title.length + detail.length) * LINE5_H + ENTRY_SPACER,
     };
+  }
+
+  // The highest index that currently fits in the viewport starting at
+  // scrollOffset. Used to auto-scroll on down-presses; returns
+  // scrollOffset - 1 if even the first entry doesn't fit (defensive).
+  private lastVisibleIndex(entries: Entry[]): number {
+    let y = CONTENT_TOP;
+    let last = this.scrollOffset - 1;
+    for (let i = this.scrollOffset; i < entries.length; i++) {
+      const w = this.wrapEntry(entries[i]);
+      if (y + w.height > CONTENT_BOTTOM) break;
+      y += w.height;
+      last = i;
+    }
+    return last;
   }
 
   private entriesFor(tab: Tab): Entry[] {
