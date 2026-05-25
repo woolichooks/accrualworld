@@ -8,7 +8,7 @@
 import { drawText, textWidth } from './font';
 import { drawText5, LINE5_H } from './font5';
 import { type Input } from './input';
-import { type Palette } from './palette';
+import type { Palette, PaletteName } from './palette';
 import { saveMeta, type MetaState } from './meta';
 import type { Scene } from './scene';
 import { wrap } from './text-wrap';
@@ -55,6 +55,10 @@ export class PuzzleScene implements Scene {
     this.prev = prev;
     this.onClose = onClose;
     this.scenarioLines = wrap(puzzle.scenario, TEXT_MAX_CHARS);
+  }
+
+  paletteName(): PaletteName {
+    return this.prev.paletteName?.() ?? 'acrid';
   }
 
   update(dt: number, input: Input): Scene | null {

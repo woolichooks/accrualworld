@@ -47,7 +47,7 @@ ctx.imageSmoothingEnabled = false;
 
 const input = new Input(app);
 
-const palette: PaletteName = 'acrid';
+const defaultPalette: PaletteName = 'acrid';
 document.getElementById('powerled')!.classList.add('on');
 
 // ---- Title scene ---------------------------------------------------------
@@ -151,7 +151,8 @@ function frame(now: number) {
   last = now;
   const next = scene.update(dt, input);
   if (next) scene = next;
-  scene.draw(ctx, PALETTES[palette]);
+  const paletteName = scene.paletteName?.() ?? defaultPalette;
+  scene.draw(ctx, PALETTES[paletteName]);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

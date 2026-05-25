@@ -15,6 +15,8 @@ export interface MetaState {
   codexSeen: string[];
   // Total seeds earned via puzzles across all runs (debug / stat).
   seedsEarned: Record<SpeciesId, number>;
+  // Wonders the player has witnessed at least once, by id.
+  witnessedWonders: string[];
 }
 
 export function newMeta(): MetaState {
@@ -23,6 +25,7 @@ export function newMeta(): MetaState {
     ledgerMarks: { '305': 0, '330': 0, '360': 0 },
     codexSeen: [],
     seedsEarned: { mint: 0, sunflower: 0, basil: 0 },
+    witnessedWonders: [],
   };
 }
 
@@ -36,6 +39,7 @@ export function loadMeta(): MetaState {
     data.ledgerMarks ??= { '305': 0, '330': 0, '360': 0 };
     data.codexSeen ??= [];
     data.seedsEarned ??= { mint: 0, sunflower: 0, basil: 0 };
+    data.witnessedWonders ??= [];
     return data;
   } catch {
     return newMeta();

@@ -28,6 +28,9 @@ export interface RunState {
   inventory: Inventory;
   sol: number;             // colony day counter
   gameTime: number;        // accumulated seconds since run start
+  // Day/night cycle
+  phase: import('./time').Phase;
+  phaseTime: number;       // seconds elapsed into current phase
 }
 
 export const GRID_W = 6;

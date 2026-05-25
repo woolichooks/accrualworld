@@ -6,10 +6,12 @@ import { type Input } from './input';
 import { type Palette } from './palette';
 import { saveRun } from './save';
 import type { Scene } from './scene';
+import type { PaletteName } from './palette';
 import { loadMeta } from './meta';
 import { pickPuzzle } from './puzzles';
 import { PuzzleScene, type PuzzleResult } from './puzzle';
 import type { RunState, SpeciesId } from './types';
+import type { GardenScene } from './garden';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -57,6 +59,16 @@ export class ConsoleMenu implements Scene {
       },
     },
     {
+      label: 'SLEEP',
+      hint: 'SKIP TO NEXT MORNING',
+      action: (mc) => {
+        // The garden owns time. Tell it to fast-forward, then resume it.
+        (mc.prev as GardenScene).sleepToMorning();
+        mc.self.flash('A NEW SOL BEGINS');
+        return null;
+      },
+    },
+    {
       label: 'RESUME',
       hint: 'BACK TO THE GARDEN',
       action: (mc) => mc.prev,
@@ -66,6 +78,10 @@ export class ConsoleMenu implements Scene {
   constructor(state: RunState, prev: Scene) {
     this.state = state;
     this.prev = prev;
+  }
+
+  paletteName(): PaletteName {
+    return this.prev.paletteName?.() ?? 'acrid';
   }
 
   flash(msg: string): void {

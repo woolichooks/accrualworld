@@ -3,11 +3,13 @@
 
 import { drawText, textWidth } from './font';
 import { type Input } from './input';
-import { type Palette } from './palette';
+import type { Palette, PaletteName } from './palette';
 import { saveRun } from './save';
 import { drawSeedIcon, drawTile, SPECIES_DATA } from './species';
 import { ConsoleMenu } from './menu';
 import type { Scene } from './scene';
+import { NEXT_PHASE, PHASE_SECONDS, paletteForPhase, phaseLabel } from './time';
+import { MeteorShowerScene } from './wonder';
 import {
   GRID_H,
   GRID_W,
@@ -31,18 +33,50 @@ export class GardenScene implements Scene {
   private state: RunState;
   private blink = 0;
   private toast: { msg: string; t: number } | null = null;
+  // Pending scene to return on next update; used when a phase
+  // transition wants to launch a wonder cinematic.
+  private pendingScene: Scene | null = null;
 
   constructor(state: RunState) {
     this.state = state;
   }
 
+  paletteName(): PaletteName {
+    return paletteForPhase(this.state.phase);
+  }
+
+  // External callers (the Sleep action in the menu) can fast-forward
+  // through phases to the next day boundary.
+  sleepToMorning(): void {
+    while (this.state.phase !== 'day') {
+      this.advancePhase();
+    }
+    saveRun(this.state);
+  }
+
   // ---- Update -----------------------------------------------------------
   update(dt: number, input: Input): Scene | null {
+    if (this.pendingScene) {
+      const s = this.pendingScene;
+      this.pendingScene = null;
+      return s;
+    }
+
     this.state.gameTime += dt;
+    this.state.phaseTime += dt;
     this.blink += dt;
     if (this.toast) {
       this.toast.t -= dt;
       if (this.toast.t <= 0) this.toast = null;
+    }
+
+    // Advance phase if elapsed; one tick may cross multiple phases on
+    // very low FPS, so loop.
+    let phaseChanged = false;
+    while (this.state.phaseTime >= PHASE_SECONDS[this.state.phase]) {
+      this.state.phaseTime -= PHASE_SECONDS[this.state.phase];
+      this.advancePhase();
+      phaseChanged = true;
     }
 
     // Advance any plants whose stage timer is up.
@@ -119,12 +153,37 @@ export class GardenScene implements Scene {
       }
     }
 
-    if (changed) saveRun(this.state);
+    if (changed || phaseChanged) saveRun(this.state);
 
     if (input.justPressed('start')) {
       return new ConsoleMenu(this.state, this);
     }
+    // If a phase change queued a scene (e.g. wonder), return it.
+    if (this.pendingScene) {
+      const s = this.pendingScene;
+      this.pendingScene = null;
+      return s;
+    }
     return null;
+  }
+
+  // Step exactly one phase forward; called by update() and by Sleep.
+  private advancePhase(): void {
+    const prev = this.state.phase;
+    const next = NEXT_PHASE[prev];
+    this.state.phase = next;
+    // Toast the transition so the player notices.
+    this.toast = { msg: phaseLabel(next), t: 1.4 };
+    // Dawn advances the Sol counter (a new colony day).
+    if (next === 'day' && prev === 'dawn') {
+      this.state.sol += 1;
+    }
+    // Entering night: 30% chance of a wonder.
+    if (next === 'night') {
+      if (Math.random() < 0.30) {
+        this.pendingScene = new MeteorShowerScene(this.state, this);
+      }
+    }
   }
 
   // ---- Draw -------------------------------------------------------------
@@ -146,6 +205,11 @@ export class GardenScene implements Scene {
     ctx.fillStyle = p[0];
     ctx.fillRect(0, 0, SCREEN_W, 11);
     drawText(ctx, `SOL ${this.state.sol}`, 2, 3, p[3]);
+
+    // Phase label in the middle.
+    const phase = phaseLabel(this.state.phase);
+    drawText(ctx, phase, Math.floor((SCREEN_W - textWidth(phase)) / 2), 3, p[3]);
+
     const wText = `H2O ${this.state.inventory.water}`;
     drawText(ctx, wText, SCREEN_W - 2 - textWidth(wText), 3, p[3]);
   }

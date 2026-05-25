@@ -24,6 +24,8 @@ export function newRun(): RunState {
     },
     sol: 1,
     gameTime: 0,
+    phase: 'day',
+    phaseTime: 0,
   };
 }
 
@@ -38,6 +40,9 @@ export function loadRun(): RunState | null {
     data.inventory ??= { seeds: { mint: 0, sunflower: 0, basil: 0 }, water: 0, harvested: { mint: 0, sunflower: 0, basil: 0 } };
     data.inventory.harvested ??= { mint: 0, sunflower: 0, basil: 0 };
     data.inventory.seeds ??= { mint: 0, sunflower: 0, basil: 0 };
+    // Day/night fields added in milestone 4 — backfill for older saves.
+    data.phase ??= 'day';
+    data.phaseTime ??= 0;
     return data;
   } catch {
     return null;
