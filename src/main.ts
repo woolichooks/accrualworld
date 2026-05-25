@@ -2,6 +2,8 @@ import './style.css';
 import { Input } from './input';
 import { PALETTES, type PaletteName } from './palette';
 import { drawText, textWidth } from './font';
+import { GardenScene, type Scene } from './garden';
+import { loadRun, newRun, clearRun } from './save';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -44,54 +46,54 @@ ctx.imageSmoothingEnabled = false;
 
 const input = new Input(app);
 
-// ---- Tiny scene system ----------------------------------------------------
-interface Scene {
-  update(dt: number): Scene | null;
-  draw(ctx: CanvasRenderingContext2D, p: readonly string[]): void;
-}
-
-let palette: PaletteName = 'acrid';
-const powerled = document.getElementById('powerled')!;
-powerled.classList.add('on');
+const palette: PaletteName = 'acrid';
+document.getElementById('powerled')!.classList.add('on');
 
 // ---- Title scene ---------------------------------------------------------
 class TitleScene implements Scene {
   private t = 0;
   private stars: { x: number; y: number; phase: number }[] = [];
+  // 0 = CONTINUE, 1 = NEW RUN. Continue is hidden if no save exists.
+  private menuIdx = 0;
+  private hasSave = loadRun() !== null;
 
   constructor() {
-    // Background starfield, seeded but doesn't need to be reproducible.
     for (let i = 0; i < 28; i++) {
       this.stars.push({
         x: Math.floor(Math.random() * SCREEN_W),
-        y: Math.floor(Math.random() * (SCREEN_H - 40)),
+        y: Math.floor(Math.random() * (SCREEN_H - 50)),
         phase: Math.random() * Math.PI * 2,
       });
     }
+    if (!this.hasSave) this.menuIdx = 1;
   }
 
-  update(dt: number): Scene | null {
+  update(dt: number, input: Input): Scene | null {
     this.t += dt;
+    if (this.hasSave && (input.justPressed('up') || input.justPressed('down'))) {
+      this.menuIdx = 1 - this.menuIdx;
+    }
     if (input.justPressed('start') || input.justPressed('a')) {
-      // Milestone 1 stops at title; pressing START flashes the screen.
-      return new BootFlashScene();
+      if (this.menuIdx === 0 && this.hasSave) {
+        return new GardenScene(loadRun()!);
+      }
+      clearRun();
+      return new GardenScene(newRun());
     }
     return null;
   }
 
   draw(ctx: CanvasRenderingContext2D, p: readonly string[]): void {
-    // Sky
     ctx.fillStyle = p[0];
     ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
 
-    // Stars (twinkle)
     for (const s of this.stars) {
       const tw = Math.sin(this.t * 2 + s.phase);
       ctx.fillStyle = tw > 0.6 ? p[3] : tw > 0 ? p[2] : p[1];
       ctx.fillRect(s.x, s.y, 1, 1);
     }
 
-    // Horizon silhouette: jagged alien hills
+    // Horizon
     ctx.fillStyle = p[1];
     ctx.fillRect(0, SCREEN_H - 32, SCREEN_W, 32);
     ctx.fillStyle = p[0];
@@ -103,68 +105,52 @@ class TitleScene implements Scene {
       ctx.fillRect(x, SCREEN_H - 32 - h, 1, h);
     }
 
-    // A tiny biodome on the horizon
     const domeX = 110, domeY = SCREEN_H - 40;
     ctx.fillStyle = p[2];
     ctx.fillRect(domeX, domeY, 14, 6);
     ctx.fillRect(domeX + 2, domeY - 2, 10, 2);
     ctx.fillRect(domeX + 4, domeY - 4, 6, 2);
     ctx.fillStyle = p[3];
-    ctx.fillRect(domeX + 6, domeY - 4, 2, 1); // light
+    ctx.fillRect(domeX + 6, domeY - 4, 2, 1);
 
-    // Title
     const title = 'ACCRUALWORLD';
-    const tw = textWidth(title);
-    drawText(ctx, title, Math.floor((SCREEN_W - tw) / 2), 36, p[3]);
-
+    drawText(ctx, title, Math.floor((SCREEN_W - textWidth(title)) / 2), 24, p[3]);
     const sub = 'A LEDGER ON SOIL 9';
-    const sw = textWidth(sub);
-    drawText(ctx, sub, Math.floor((SCREEN_W - sw) / 2), 50, p[2]);
+    drawText(ctx, sub, Math.floor((SCREEN_W - textWidth(sub)) / 2), 36, p[2]);
 
-    // Blinking PRESS START
-    if (Math.floor(this.t * 1.8) % 2 === 0) {
-      const ps = 'PRESS START';
-      const pw = textWidth(ps);
-      drawText(ctx, ps, Math.floor((SCREEN_W - pw) / 2), 96, p[3]);
+    // Menu
+    const opts: { label: string; enabled: boolean }[] = [
+      { label: 'CONTINUE', enabled: this.hasSave },
+      { label: 'NEW RUN',  enabled: true },
+    ];
+    for (let i = 0; i < opts.length; i++) {
+      const o = opts[i];
+      const label = o.label;
+      const y = 72 + i * 12;
+      const x = Math.floor((SCREEN_W - textWidth(label)) / 2);
+      const dim = !o.enabled;
+      const focused = i === this.menuIdx;
+      const color = dim ? p[1] : focused ? p[3] : p[2];
+      drawText(ctx, label, x, y, color);
+      if (focused && Math.floor(this.t * 2) % 2 === 0) {
+        drawText(ctx, '>', x - 6, y, p[3]);
+      }
     }
 
-    // Footer
-    const foot = 'V0.1  MILESTONE 1';
-    drawText(ctx, foot, 4, SCREEN_H - 7, p[2]);
-  }
-}
-
-// Brief flash so START feels connected; returns to title.
-class BootFlashScene implements Scene {
-  private t = 0;
-  update(dt: number): Scene | null {
-    this.t += dt;
-    if (this.t > 0.35) return new TitleScene();
-    return null;
-  }
-  draw(ctx: CanvasRenderingContext2D, p: readonly string[]): void {
-    const flash = this.t < 0.12 ? p[3] : this.t < 0.22 ? p[2] : p[1];
-    ctx.fillStyle = flash;
-    ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
-    const msg = 'BOOTING COLONY OS...';
-    drawText(ctx, msg, Math.floor((SCREEN_W - textWidth(msg)) / 2), 70, p[0]);
+    const hint = 'D-PAD + A/START';
+    drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[2]);
   }
 }
 
 let scene: Scene = new TitleScene();
 
-// ---- Main loop -----------------------------------------------------------
 let last = performance.now();
 function frame(now: number) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-
-  const next = scene.update(dt);
+  const next = scene.update(dt, input);
   if (next) scene = next;
-
-  const p = PALETTES[palette];
-  scene.draw(ctx, p);
-
+  scene.draw(ctx, PALETTES[palette]);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
