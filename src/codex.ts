@@ -18,10 +18,18 @@ import { templateById, TEMPLATES } from './puzzles';
 import { wonderById, WONDERS } from './wonder';
 import { RECIPES } from './recipes';
 import { MUTATIONS } from './species';
+import { wrap } from './text-wrap';
 import type { RunState, SpeciesId } from './types';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
+// 5x7 font: ~6px per char. Usable width 152px -> ~25 chars/line.
+const TITLE_CHARS = 25;
+const DETAIL_CHARS = 24;
+// y bounds of the content area between tab strip and footer.
+const CONTENT_TOP = 26;
+const CONTENT_BOTTOM = SCREEN_H - 12;
+const ENTRY_SPACER = 4;
 
 type Tab = 'std' | 'wnd' | 'rcp' | 'mut' | 'inf';
 
@@ -74,19 +82,24 @@ export class CodexScene implements Scene {
       this.tabIdx = (this.tabIdx + 1) % TAB_ORDER.length;
       this.scrollOffset = 0;
     }
-    // Up/down scrolls the list.
+    // Up/down scrolls one entry at a time. Clamping happens in render.
     if (input.justPressed('up') && this.scrollOffset > 0) this.scrollOffset -= 1;
     if (input.justPressed('down')) {
       const entries = this.entriesFor(TAB_ORDER[this.tabIdx]);
-      const maxScroll = Math.max(0, entries.length - this.maxVisibleEntries());
-      if (this.scrollOffset < maxScroll) this.scrollOffset += 1;
+      if (this.scrollOffset < entries.length - 1) this.scrollOffset += 1;
     }
     return null;
   }
 
-  private maxVisibleEntries(): number {
-    // Each entry takes 2 lines (title + detail) + 1 spacer. ~3 entries fit.
-    return 3;
+  // Pre-compute wrapped lines for an entry so render and overflow math agree.
+  private wrapEntry(e: Entry): { title: string[]; detail: string[]; height: number } {
+    const title = wrap(e.title, TITLE_CHARS);
+    const detail = wrap(e.detail, DETAIL_CHARS);
+    return {
+      title,
+      detail,
+      height: (title.length + detail.length) * LINE5_H + ENTRY_SPACER,
+    };
   }
 
   private entriesFor(tab: Tab): Entry[] {
@@ -174,28 +187,39 @@ export class CodexScene implements Scene {
       }
     }
 
-    // Entries list
+    // Entries list — variable-height entries with word-wrapped title
+    // and detail. We render as many as fit between the tab strip and
+    // the footer; anything beyond stays for the next scroll step.
     const entries = this.entriesFor(TAB_ORDER[this.tabIdx]);
-    const visible = entries.slice(this.scrollOffset, this.scrollOffset + this.maxVisibleEntries());
-    let y = 26;
-    if (visible.length === 0) {
+    let y = CONTENT_TOP;
+    let lastDrawn = this.scrollOffset - 1;
+    if (entries.length === 0) {
       drawText5(ctx, 'EMPTY.', 4, y, p[2]);
     } else {
-      for (const e of visible) {
+      for (let i = this.scrollOffset; i < entries.length; i++) {
+        const e = entries[i];
+        const w = this.wrapEntry(e);
+        if (y + w.height > CONTENT_BOTTOM) break;
         const titleColor = e.locked ? p[2] : p[3];
-        drawText5(ctx, e.title, 4, y, titleColor);
-        y += LINE5_H;
-        drawText5(ctx, e.detail, 8, y, p[2]);
-        y += LINE5_H + 4;
+        for (const ln of w.title) {
+          drawText5(ctx, ln, 4, y, titleColor);
+          y += LINE5_H;
+        }
+        for (const ln of w.detail) {
+          drawText5(ctx, ln, 8, y, p[2]);
+          y += LINE5_H;
+        }
+        y += ENTRY_SPACER;
+        lastDrawn = i;
       }
     }
 
-    // Scroll indicators if there's more above/below.
+    // Scroll indicators when there's content above/below the viewport.
     if (this.scrollOffset > 0) {
-      drawText5(ctx, '^', SCREEN_W - 8, 26, p[3]);
+      drawText5(ctx, '^', SCREEN_W - 8, CONTENT_TOP, p[3]);
     }
-    if (this.scrollOffset + this.maxVisibleEntries() < entries.length) {
-      drawText5(ctx, 'v', SCREEN_W - 8, SCREEN_H - 22, p[3]);
+    if (lastDrawn < entries.length - 1) {
+      drawText5(ctx, 'V', SCREEN_W - 8, CONTENT_BOTTOM - LINE5_H, p[3]);
     }
 
     // Footer
