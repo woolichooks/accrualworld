@@ -62,10 +62,10 @@ export class ConsoleMenu implements Scene {
       label: 'SLEEP',
       hint: 'SKIP TO NEXT MORNING',
       action: (mc) => {
-        // The garden owns time. Tell it to fast-forward, then resume it.
+        // Fast-forward the garden, then close the menu so the player
+        // actually sees the new day.
         (mc.prev as GardenScene).sleepToMorning();
-        mc.self.flash('A NEW SOL BEGINS');
-        return null;
+        return mc.prev;
       },
     },
     {

@@ -36,6 +36,9 @@ export class GardenScene implements Scene {
   // Pending scene to return on next update; used when a phase
   // transition wants to launch a wonder cinematic.
   private pendingScene: Scene | null = null;
+  // True only while sleepToMorning is iterating; suppresses wonder
+  // rolls so the colonist doesn't "witness" things during sleep.
+  private isSleeping = false;
 
   constructor(state: RunState) {
     this.state = state;
@@ -46,12 +49,40 @@ export class GardenScene implements Scene {
   }
 
   // External callers (the Sleep action in the menu) can fast-forward
-  // through phases to the next day boundary.
+  // through phases to the next morning. Advances gameTime so plants
+  // actually grow while the colonist sleeps. Wonder rolls are
+  // suppressed — you can't witness a meteor shower with your eyes shut.
   sleepToMorning(): void {
-    while (this.state.phase !== 'day') {
+    this.isSleeping = true;
+    // Always advance at least one phase so SLEEP during the day still
+    // skips ahead a full cycle to the next morning.
+    do {
+      const remaining = PHASE_SECONDS[this.state.phase] - this.state.phaseTime;
+      this.state.gameTime += remaining;
+      this.state.phaseTime = 0;
       this.advancePhase();
-    }
+      this.catchUpPlants();
+    } while (this.state.phase !== 'day');
+    this.isSleeping = false;
     saveRun(this.state);
+  }
+
+  // Run plant stage transitions up to the current gameTime. Called
+  // after sleep so plants leapfrog stages they would have hit.
+  private catchUpPlants(): void {
+    for (const tile of this.state.tiles) {
+      while (tile.species && tile.stage > 0 && tile.stage < 4) {
+        const sp = SPECIES_DATA[tile.species];
+        const isWatered = tile.lastWateredAt > tile.stageStartedAt;
+        const stageSecs = isWatered ? sp.secondsPerStage / 2 : sp.secondsPerStage;
+        if (this.state.gameTime - tile.stageStartedAt >= stageSecs) {
+          tile.stage = (tile.stage + 1) as GrowthStage;
+          tile.stageStartedAt = this.state.gameTime;
+        } else {
+          break;
+        }
+      }
+    }
   }
 
   // ---- Update -----------------------------------------------------------
@@ -178,8 +209,8 @@ export class GardenScene implements Scene {
     if (next === 'day' && prev === 'dawn') {
       this.state.sol += 1;
     }
-    // Entering night: 30% chance of a wonder.
-    if (next === 'night') {
+    // Entering night: 30% chance of a wonder. Skipped during sleep.
+    if (next === 'night' && !this.isSleeping) {
       if (Math.random() < 0.30) {
         this.pendingScene = new MeteorShowerScene(this.state, this);
       }
