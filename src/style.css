@@ -115,10 +115,21 @@ html, body {
 /* ---- Controls row ---- */
 .controls {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
   padding: 22px 6px 6px;
   align-items: center;
+}
+
+.serial {
+  text-align: center;
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--label);
+  opacity: 0.65;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
 }
 
 .dpad {
