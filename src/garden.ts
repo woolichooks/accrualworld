@@ -135,6 +135,8 @@ export class GardenScene implements Scene {
     this.drawHud(ctx, p);
     this.drawGrid(ctx, p);
     this.drawCursor(ctx, p);
+    this.drawStockPanel(ctx, p);
+    this.drawTileStatus(ctx, p);
     this.drawPrompt(ctx, p);
     if (this.toast) this.drawToast(ctx, p);
   }
@@ -142,21 +144,47 @@ export class GardenScene implements Scene {
   private drawHud(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.fillStyle = p[0];
     ctx.fillRect(0, 0, SCREEN_W, 11);
-
     drawText(ctx, `SOL ${this.state.sol}`, 2, 3, p[3]);
-
-    // Selected seed chip: <icon> <name> S:<seeds> L:<harvested leaves>
-    const seed = this.state.selectedSeed;
-    const seedCount = this.state.inventory.seeds[seed];
-    const leafCount = this.state.inventory.harvested[seed];
-    const chipX = 36;
-    drawSeedIcon(ctx, chipX, 3, seed, p);
-    const chipText = `${SPECIES_DATA[seed].name} ${seedCount}/${leafCount}`;
-    drawText(ctx, chipText, chipX + 7, 3, p[3]);
-
-    // Water counter, right-aligned
     const wText = `H2O ${this.state.inventory.water}`;
     drawText(ctx, wText, SCREEN_W - 2 - textWidth(wText), 3, p[3]);
+  }
+
+  // Always-visible stock for all species: <icon> <name> <seeds>/<leaves>.
+  // The currently selected seed (for planting) is brightened + marked with '>'.
+  private drawStockPanel(ctx: CanvasRenderingContext2D, p: Palette): void {
+    const y = GRID_Y + GRID_H * TILE_PX + 4; // 4px below grid
+    // Three chunks evenly distributed across the screen width.
+    const chunkW = Math.floor(SCREEN_W / 3);
+    for (let i = 0; i < SPECIES.length; i++) {
+      const sp = SPECIES[i];
+      const sd = SPECIES_DATA[sp];
+      const seeds = this.state.inventory.seeds[sp];
+      const leaves = this.state.inventory.harvested[sp];
+      const selected = this.state.selectedSeed === sp;
+
+      const text = `${sd.name} ${seeds}/${leaves}`;
+      const totalW = 5 + 2 + textWidth(text); // icon + gap + text
+      const x = i * chunkW + Math.floor((chunkW - totalW) / 2);
+
+      drawSeedIcon(ctx, x, y, sp, p);
+      drawText(ctx, text, x + 7, y, selected ? p[3] : p[2]);
+      if (selected) drawText(ctx, '>', x - 4, y, p[3]);
+    }
+  }
+
+  // Below the stock row: what's on the focused tile.
+  private drawTileStatus(ctx: CanvasRenderingContext2D, p: Palette): void {
+    const tile = this.state.tiles[this.state.cursor.y * GRID_W + this.state.cursor.x];
+    const y = GRID_Y + GRID_H * TILE_PX + 14;
+    let label: string;
+    if (!tile.species || tile.stage === 0) {
+      label = 'TILE: EMPTY';
+    } else {
+      const stageName = ['', 'SEED', 'SPROUT', 'GROWING', 'MATURE'][tile.stage];
+      const watered = tile.lastWateredAt > tile.stageStartedAt ? ' (WET)' : '';
+      label = `TILE: ${SPECIES_DATA[tile.species].name} ${stageName}${watered}`;
+    }
+    drawText(ctx, label, 2, y, p[3]);
   }
 
   private drawGrid(ctx: CanvasRenderingContext2D, p: Palette): void {
