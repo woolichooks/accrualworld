@@ -33,7 +33,7 @@ app.innerHTML = `
         <button class="right" data-btn="right" aria-label="right"></button>
         <div class="center"></div>
       </div>
-      <div class="serial">Woolichooks &bull; V202605.01</div>
+      <div class="serial">WOOLICHOOKS &bull; V202605.01</div>
       <div class="ab">
         <button data-btn="b" aria-label="b">B</button>
         <button data-btn="a" aria-label="a">A</button>
