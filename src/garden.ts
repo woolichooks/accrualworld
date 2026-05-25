@@ -9,6 +9,7 @@ import { drawSeedIcon, drawTile, SPECIES_DATA } from './species';
 import { ConsoleMenu } from './menu';
 import type { Scene } from './scene';
 import { NEXT_PHASE, PHASE_SECONDS, paletteForPhase, phaseLabel } from './time';
+import { drawSkyClock, SKYCLOCK_W } from './sky';
 import { MeteorShowerScene } from './wonder';
 import {
   GRID_H,
@@ -234,12 +235,17 @@ export class GardenScene implements Scene {
 
   private drawHud(ctx: CanvasRenderingContext2D, p: Palette): void {
     ctx.fillStyle = p[0];
-    ctx.fillRect(0, 0, SCREEN_W, 11);
+    ctx.fillRect(0, 0, SCREEN_W, 12);
     drawText(ctx, `SOL ${this.state.sol}`, 2, 3, p[3]);
 
-    // Phase label in the middle.
+    // Sky-clock widget centered horizontally so the animation reads as
+    // the focal element of the HUD. Phase label sits to its right.
     const phase = phaseLabel(this.state.phase);
-    drawText(ctx, phase, Math.floor((SCREEN_W - textWidth(phase)) / 2), 3, p[3]);
+    const labelW = textWidth(phase);
+    const groupW = SKYCLOCK_W + 3 + labelW;
+    const groupX = Math.floor((SCREEN_W - groupW) / 2);
+    drawSkyClock(ctx, groupX, 1, this.state.phase, this.state.phaseTime, p);
+    drawText(ctx, phase, groupX + SKYCLOCK_W + 3, 3, p[3]);
 
     const wText = `H2O ${this.state.inventory.water}`;
     drawText(ctx, wText, SCREEN_W - 2 - textWidth(wText), 3, p[3]);
