@@ -24,7 +24,7 @@ export class StatusScene implements Scene {
   }
 
   paletteName(): PaletteName {
-    return this.prev.paletteName?.() ?? 'acrid';
+    return this.prev.paletteName?.() ?? 'day';
   }
 
   update(dt: number, input: Input): Scene | null {

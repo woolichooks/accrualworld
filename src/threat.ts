@@ -124,7 +124,7 @@ export class ThreatScene implements Scene {
   }
 
   paletteName(): PaletteName {
-    return 'ember'; // warm-warning tones for any threat
+    return 'event'; // warm-warning tones for any threat
   }
 
   update(dt: number, _input: Input): Scene | null {

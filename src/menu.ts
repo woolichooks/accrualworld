@@ -114,7 +114,7 @@ export class ConsoleMenu implements Scene {
   }
 
   paletteName(): PaletteName {
-    return this.prev.paletteName?.() ?? 'acrid';
+    return this.prev.paletteName?.() ?? 'day';
   }
 
   flash(msg: string): void {

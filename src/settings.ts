@@ -1,17 +1,21 @@
 // Persistent player settings. Lives under accrualworld.settings.v1 so
-// it survives across runs and even runs deletions. Currently small:
-// just the SFX toggle. Palette skin / other prefs will live here too.
+// it survives across runs and even run deletions. Houses the SFX
+// toggle and the theme (bezel + screen palette) choice.
+
+import type { ThemeId } from './themes';
 
 const KEY = 'accrualworld.settings.v1';
 
 export interface Settings {
   schema: 1;
   sfxEnabled: boolean;
+  theme: ThemeId;
 }
 
 const DEFAULTS: Settings = {
   schema: 1,
   sfxEnabled: true,
+  theme: 'acrid',
 };
 
 let cache: Settings | null = null;
@@ -24,6 +28,7 @@ export function loadSettings(): Settings {
     const data = JSON.parse(raw) as Settings;
     if (data.schema !== 1) { cache = { ...DEFAULTS }; return cache; }
     data.sfxEnabled ??= DEFAULTS.sfxEnabled;
+    data.theme ??= DEFAULTS.theme;
     cache = data;
     return cache;
   } catch {

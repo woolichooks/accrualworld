@@ -36,7 +36,7 @@ export class GameOverScene implements Scene {
   }
 
   paletteName(): PaletteName {
-    return 'ember';
+    return 'event';
   }
 
   update(_dt: number, input: Input): Scene | null {

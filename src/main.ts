@@ -1,6 +1,6 @@
 import './style.css';
 import { Input } from './input';
-import { PALETTES, type PaletteName } from './palette';
+import { getPalette, type PaletteName } from './palette';
 import { drawText, textWidth } from './font';
 import { GardenScene } from './garden';
 import type { Scene } from './scene';
@@ -9,6 +9,11 @@ import { registerTitle } from './gameover';
 import { DIFFICULTY, type Difficulty } from './types';
 import { getShakeOffset, updateShake } from './shake';
 import { SettingsScene } from './settings_scene';
+import { loadSettings } from './settings';
+import { applyThemeBezel } from './themes';
+
+// Apply the saved theme's bezel colors before anything renders.
+applyThemeBezel(loadSettings().theme);
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -52,7 +57,7 @@ ctx.imageSmoothingEnabled = false;
 
 const input = new Input(app);
 
-const defaultPalette: PaletteName = 'acrid';
+const defaultPalette: PaletteName = 'day';
 document.getElementById('powerled')!.classList.add('on');
 
 // ---- Title scene ---------------------------------------------------------
@@ -217,7 +222,7 @@ function frame(now: number) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
   ctx.setTransform(1, 0, 0, 1, sx, sy);
-  scene.draw(ctx, PALETTES[paletteName]);
+  scene.draw(ctx, getPalette(paletteName));
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   requestAnimationFrame(frame);
 }

@@ -52,7 +52,7 @@ export class MeteorShowerScene implements Scene {
   paletteName(): PaletteName {
     // Force night tones during the shower; brighter palette would
     // wash the streaks out.
-    return 'indigo';
+    return 'night';
   }
 
   update(dt: number, _input: Input): Scene | null {
@@ -209,7 +209,7 @@ export class FireflySwarmScene implements Scene {
     }
   }
 
-  paletteName(): PaletteName { return 'indigo'; }
+  paletteName(): PaletteName { return 'night'; }
 
   update(dt: number, _input: Input): Scene | null {
     this.t += dt;
@@ -287,7 +287,7 @@ export class TwinMoonsScene implements Scene {
     sfx.wonder();
   }
 
-  paletteName(): PaletteName { return 'indigo'; }
+  paletteName(): PaletteName { return 'night'; }
 
   update(dt: number, _input: Input): Scene | null {
     this.t += dt;

@@ -25,10 +25,10 @@ export const NEXT_PHASE: Record<Phase, Phase> = {
 
 export function paletteForPhase(phase: Phase): PaletteName {
   switch (phase) {
-    case 'day':   return 'acrid';
-    case 'dusk':  return 'ember';
-    case 'night': return 'indigo';
-    case 'dawn':  return 'ember';
+    case 'day':   return 'day';
+    case 'dusk':  return 'event';
+    case 'night': return 'night';
+    case 'dawn':  return 'event';
   }
 }
 
