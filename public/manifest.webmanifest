@@ -1,0 +1,25 @@
+{
+  "name": "Accrualworld",
+  "short_name": "Accrualworld",
+  "description": "Garden simulator on a hostile alien planet. Grow mutated plants, brew survival potions, and solve FASB-flavored accounting puzzles to rebuild your ship and escape.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0908",
+  "theme_color": "#1a3a26",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
