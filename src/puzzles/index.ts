@@ -18,9 +18,16 @@ export const TEMPLATES: PuzzleTemplate[] = [
   ppe_cap_expense_t1,
 ];
 
-export function pickPuzzle(sol: number): PuzzleInstance {
+export function pickPuzzle(
+  sol: number,
+  allowedTiers: readonly number[] = [1, 2, 3],
+): PuzzleInstance {
   const rng = new Rng(randomSeed());
-  const t = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
+  const pool = TEMPLATES.filter((t) => allowedTiers.includes(t.tier));
+  // Safety: if filtering eliminated everything (misconfig), fall back
+  // to the full list so the Vault never softlocks.
+  const list = pool.length > 0 ? pool : TEMPLATES;
+  const t = list[Math.floor(Math.random() * list.length)];
   return t.generate(rng, sol);
 }
 

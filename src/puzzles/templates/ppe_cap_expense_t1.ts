@@ -63,6 +63,7 @@ export const ppe_cap_expense_t1: PuzzleTemplate = {
   tier: 1,
   displayName: 'ASC 360 - PP&E (T1)',
   blurb: 'CAPITALIZE VS EXPENSE',
+  hint: 'EXTENDS LIFE OR CAPACITY = CAPITALIZE. JUST MAINTAINS = EXPENSE.',
   staticCodex: {
     citation: 'ASC 360-10-30 / 360-10-35',
     excerpt:
@@ -109,6 +110,7 @@ export const ppe_cap_expense_t1: PuzzleTemplate = {
           '(CAPITALIZE), OR JUST KEEP IT RUNNING (EXPENSE)?',
       },
       reward: { seeds: { mint: 1, sunflower: 1, basil: 2 } },
+      hint: ppe_cap_expense_t1.hint,
     };
   },
 };

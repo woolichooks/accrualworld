@@ -13,6 +13,7 @@ export const inv_lcnrv_t2: PuzzleTemplate = {
   tier: 2,
   displayName: 'ASC 330 - LCNRV (T2)',
   blurb: 'CENTS-LEVEL CALC, DIAL ENTRY',
+  hint: 'NRV = SP - COSTS TO SELL. CARRY AT THE LOWER OF COST AND NRV.',
   staticCodex: {
     citation: 'ASC 330-10-35-1B',
     excerpt:
@@ -80,6 +81,7 @@ export const inv_lcnrv_t2: PuzzleTemplate = {
           'IF NRV LATER RECOVERS.',
       },
       reward: { seeds: { mint: 1, sunflower: 1, basil: 1, chamomile: 1 } },
+      hint: inv_lcnrv_t2.hint,
     };
   },
 };

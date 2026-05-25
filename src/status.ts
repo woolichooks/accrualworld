@@ -8,7 +8,7 @@ import { drawHeart, HEART_W } from './heart';
 import { type Input } from './input';
 import type { Palette, PaletteName } from './palette';
 import type { Scene } from './scene';
-import { STAT_MAX, SPECIES, type RunState } from './types';
+import { DIFFICULTY, STAT_MAX, SPECIES, type RunState } from './types';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -46,7 +46,8 @@ export class StatusScene implements Scene {
     ctx.fillRect(0, 0, SCREEN_W, 11);
     ctx.fillStyle = p[3];
     ctx.fillRect(0, 10, SCREEN_W, 1);
-    drawText(ctx, 'STATUS', 4, 3, p[3]);
+    const mode = DIFFICULTY[this.state.difficulty].label;
+    drawText(ctx, `STATUS  ${mode}`, 4, 3, p[3]);
     drawText(ctx, `SOL ${this.state.sol}`, SCREEN_W - 2 - textWidth(`SOL ${this.state.sol}`), 3, p[3]);
 
     // Shelter stats — heart, label, segmented bar, numeric.

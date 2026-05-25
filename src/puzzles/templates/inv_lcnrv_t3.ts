@@ -12,6 +12,7 @@ export const inv_lcnrv_t3: PuzzleTemplate = {
   tier: 3,
   displayName: 'ASC 330 - LCNRV (T3)',
   blurb: 'FIFO ENDING + WRITE-DOWN',
+  hint: 'FIFO: LATER LOTS STAY ON HAND. THEN CAP THE BALANCE AT NRV.',
   staticCodex: {
     citation: 'ASC 330-10-30 / 330-10-35',
     excerpt:
@@ -98,6 +99,7 @@ export const inv_lcnrv_t3: PuzzleTemplate = {
           'NUMBER FOR THE NRV TEST.',
       },
       reward: { seeds: { mint: 2, sunflower: 2, basil: 2, potato: 1, aloe: 1 } },
+      hint: inv_lcnrv_t3.hint,
     };
   },
 };

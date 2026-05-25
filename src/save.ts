@@ -1,7 +1,7 @@
 // Run save/load. Meta-progression will live under a separate key
 // (`accrualworld.meta.v1`) added in a later milestone.
 
-import { GRID_W, GRID_H, type RunState, type SpeciesId, type Tile } from './types';
+import { GRID_W, GRID_H, type Difficulty, type RunState, type SpeciesId, type Tile } from './types';
 
 const KEY = 'accrualworld.run.v1';
 
@@ -9,7 +9,7 @@ export function emptyTile(): Tile {
   return { species: null, stage: 0, stageStartedAt: 0, lastWateredAt: 0, mutated: false };
 }
 
-export function newRun(): RunState {
+export function newRun(difficulty: Difficulty = 'normal'): RunState {
   const tiles: Tile[] = [];
   for (let i = 0; i < GRID_W * GRID_H; i++) tiles.push(emptyTile());
   return {
@@ -35,6 +35,7 @@ export function newRun(): RunState {
     gameTime: 0,
     phase: 'day',
     phaseTime: 0,
+    difficulty,
   };
 }
 
@@ -66,6 +67,8 @@ export function loadRun(): RunState | null {
     data.shelter ??= { hull: 10, oxygen: 10, power: 10 };
     // Mutations added in milestone 6 polish — backfill `mutated:false`.
     for (const t of data.tiles) t.mutated ??= false;
+    // Difficulty added later — default existing saves to NORMAL.
+    data.difficulty ??= 'normal';
     return data;
   } catch {
     return null;

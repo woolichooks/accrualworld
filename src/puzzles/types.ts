@@ -57,6 +57,9 @@ export interface PuzzleInstance {
   codex: CodexRef;
   // What the player gets for a correct answer (all questions correct).
   reward: SeedReward;
+  // Carried over from the template so PuzzleScene can show it in
+  // easy mode without re-importing the template list.
+  hint: string;
 }
 
 export interface SeedReward {
@@ -72,6 +75,9 @@ export interface PuzzleTemplate {
   // generate a puzzle instance just to label one in a list.
   displayName: string;   // "ASC 330 - INVENTORY"
   blurb: string;         // "LOWER OF COST OR NRV"
+  // Plain-English rule shown only in easy mode. Should be one tight
+  // sentence the player can apply without prior accounting context.
+  hint: string;
   // Static codex content shown in the Codex drill-in. Mirrors what
   // the dynamic instance.codex returns, but generic enough to be
   // shown without rolling a puzzle.

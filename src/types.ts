@@ -42,6 +42,44 @@ export interface Shelter {
 
 export const STAT_MAX = 10;
 
+export type Difficulty = 'easy' | 'normal' | 'hard';
+
+export interface DifficultySettings {
+  allowedTiers: number[];
+  showHints: boolean;
+  wrongPenaltyOxygen: number;
+  rewardMultiplier: number;
+  label: string;
+  blurb: string;
+}
+
+export const DIFFICULTY: Record<Difficulty, DifficultySettings> = {
+  easy: {
+    allowedTiers: [1],
+    showHints: true,
+    wrongPenaltyOxygen: 0,
+    rewardMultiplier: 1,
+    label: 'EASY',
+    blurb: 'BEGINNER. HINTS ON. NO PENALTY.',
+  },
+  normal: {
+    allowedTiers: [1, 2, 3],
+    showHints: false,
+    wrongPenaltyOxygen: 0,
+    rewardMultiplier: 1,
+    label: 'NORMAL',
+    blurb: 'STANDARD. MIXED TIERS.',
+  },
+  hard: {
+    allowedTiers: [2, 3],
+    showHints: false,
+    wrongPenaltyOxygen: 1,
+    rewardMultiplier: 2,
+    label: 'HARD',
+    blurb: 'EXPERIENCED. -1 OXY ON WRONG. 2X REWARD.',
+  },
+};
+
 export interface RunState {
   schema: 1;
   tiles: Tile[];           // length GRID_W * GRID_H, row-major
@@ -54,6 +92,7 @@ export interface RunState {
   // Day/night cycle
   phase: import('./time').Phase;
   phaseTime: number;       // seconds elapsed into current phase
+  difficulty: Difficulty;
 }
 
 export const GRID_W = 6;

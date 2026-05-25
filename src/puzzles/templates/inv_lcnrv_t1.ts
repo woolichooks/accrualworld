@@ -15,6 +15,7 @@ export const inv_lcnrv_t1: PuzzleTemplate = {
   tier: 1,
   displayName: 'ASC 330 - INVENTORY (T1)',
   blurb: 'LOWER OF COST OR NRV',
+  hint: 'COMPARE COST TO (SELLING PRICE - COSTS TO SELL). TAKE THE LOWER.',
   staticCodex: {
     citation: 'ASC 330-10-35-1B',
     excerpt:
@@ -88,6 +89,7 @@ export const inv_lcnrv_t1: PuzzleTemplate = {
       reward: {
         seeds: { mint: 2, sunflower: 1, basil: 1 },
       },
+      hint: inv_lcnrv_t1.hint,
     };
   },
 };

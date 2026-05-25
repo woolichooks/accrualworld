@@ -13,7 +13,7 @@ import { PuzzleScene, type PuzzleResult } from './puzzle';
 import { BrewBenchScene } from './brew';
 import { CodexScene } from './codex';
 import { StatusScene } from './status';
-import type { RunState, SpeciesId } from './types';
+import { DIFFICULTY, type RunState, type SpeciesId } from './types';
 import type { GardenScene } from './garden';
 
 const SCREEN_W = 160;
@@ -44,21 +44,35 @@ export class ConsoleMenu implements Scene {
       hint: 'EARN SEEDS BY CLOSING THE BOOKS',
       action: (mc) => {
         const meta = loadMeta();
-        const puzzle = pickPuzzle(mc.state.sol);
+        const diff = DIFFICULTY[mc.state.difficulty];
+        const puzzle = pickPuzzle(mc.state.sol, diff.allowedTiers);
         const onClose = (r: PuzzleResult): Scene => {
           if (r.kind === 'correct') {
+            // Reward is scaled by the difficulty multiplier.
             for (const [sp, n] of Object.entries(puzzle.reward.seeds)) {
               if (!n) continue;
-              mc.state.inventory.seeds[sp as SpeciesId] += n;
+              mc.state.inventory.seeds[sp as SpeciesId] += n * diff.rewardMultiplier;
             }
             saveRun(mc.state);
             mc.self.flash(r.firstSolve ? 'SEEDS + CODEX UNLOCKED' : 'SEEDS GRANTED');
           } else if (r.kind === 'incorrect') {
-            mc.self.flash('FILE REJECTED. TRY LATER.');
+            // Hard mode penalty: drain a stat point. Clamp at 0 (the
+            // garden's normal death check handles a 0 stat the same
+            // way as any other source).
+            if (diff.wrongPenaltyOxygen > 0) {
+              mc.state.shelter.oxygen = Math.max(
+                0,
+                mc.state.shelter.oxygen - diff.wrongPenaltyOxygen,
+              );
+              saveRun(mc.state);
+              mc.self.flash(`REJECTED. -${diff.wrongPenaltyOxygen} OXY`);
+            } else {
+              mc.self.flash('FILE REJECTED. TRY LATER.');
+            }
           }
           return mc.self;
         };
-        return new PuzzleScene(puzzle, meta, mc.self, onClose);
+        return new PuzzleScene(puzzle, meta, mc.self, onClose, mc.state.difficulty);
       },
     },
     {

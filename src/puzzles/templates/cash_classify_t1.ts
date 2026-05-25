@@ -59,6 +59,7 @@ export const cash_classify_t1: PuzzleTemplate = {
   tier: 1,
   displayName: 'ASC 305 - CASH (T1)',
   blurb: 'CASH / EQUIVALENT / RESTRICTED',
+  hint: 'CASH EQUIVALENT = ORIGINAL MATURITY OF 3 MONTHS OR LESS.',
   staticCodex: {
     citation: 'ASC 305-10 / ASC 230-10-20',
     excerpt:
@@ -102,6 +103,7 @@ export const cash_classify_t1: PuzzleTemplate = {
           'WHEN THE INSTRUMENT WAS ACQUIRED, NOT REMAINING TIME.',
       },
       reward: { seeds: { mint: 1, sunflower: 2, basil: 1 } },
+      hint: cash_classify_t1.hint,
     };
   },
 };

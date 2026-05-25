@@ -6,6 +6,7 @@ import { GardenScene } from './garden';
 import type { Scene } from './scene';
 import { loadRun, newRun, clearRun } from './save';
 import { registerTitle } from './gameover';
+import { DIFFICULTY, type Difficulty } from './types';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -55,8 +56,11 @@ document.getElementById('powerled')!.classList.add('on');
 class TitleScene implements Scene {
   private t = 0;
   private stars: { x: number; y: number; phase: number }[] = [];
-  // 0 = CONTINUE, 1 = NEW RUN. Continue is hidden if no save exists.
-  private menuIdx = 0;
+  // Two-step menu: main -> difficulty (only when starting a new run).
+  private mainIdx = 0;            // 0 CONTINUE, 1 NEW RUN
+  private picking = false;        // true while the difficulty submenu is open
+  private diffIdx = 1;            // default cursor lands on NORMAL
+  private readonly diffs: Difficulty[] = ['easy', 'normal', 'hard'];
   private hasSave = loadRun() !== null;
 
   constructor() {
@@ -67,20 +71,32 @@ class TitleScene implements Scene {
         phase: Math.random() * Math.PI * 2,
       });
     }
-    if (!this.hasSave) this.menuIdx = 1;
+    if (!this.hasSave) this.mainIdx = 1;
   }
 
   update(dt: number, input: Input): Scene | null {
     this.t += dt;
+
+    if (this.picking) {
+      if (input.justPressed('up')) this.diffIdx = (this.diffIdx + 2) % 3;
+      if (input.justPressed('down')) this.diffIdx = (this.diffIdx + 1) % 3;
+      if (input.justPressed('b')) { this.picking = false; return null; }
+      if (input.justPressed('a') || input.justPressed('start')) {
+        clearRun();
+        return new GardenScene(newRun(this.diffs[this.diffIdx]));
+      }
+      return null;
+    }
+
     if (this.hasSave && (input.justPressed('up') || input.justPressed('down'))) {
-      this.menuIdx = 1 - this.menuIdx;
+      this.mainIdx = 1 - this.mainIdx;
     }
     if (input.justPressed('start') || input.justPressed('a')) {
-      if (this.menuIdx === 0 && this.hasSave) {
+      if (this.mainIdx === 0 && this.hasSave) {
         return new GardenScene(loadRun()!);
       }
-      clearRun();
-      return new GardenScene(newRun());
+      this.picking = true;
+      return null;
     }
     return null;
   }
@@ -120,7 +136,12 @@ class TitleScene implements Scene {
     const sub = 'A LEDGER ON SOIL 9';
     drawText(ctx, sub, Math.floor((SCREEN_W - textWidth(sub)) / 2), 36, p[2]);
 
-    // Menu
+    if (this.picking) {
+      this.drawDifficultyPicker(ctx, p);
+      return;
+    }
+
+    // Main menu
     const opts: { label: string; enabled: boolean }[] = [
       { label: 'CONTINUE', enabled: this.hasSave },
       { label: 'NEW RUN',  enabled: true },
@@ -131,7 +152,7 @@ class TitleScene implements Scene {
       const y = 72 + i * 12;
       const x = Math.floor((SCREEN_W - textWidth(label)) / 2);
       const dim = !o.enabled;
-      const focused = i === this.menuIdx;
+      const focused = i === this.mainIdx;
       const color = dim ? p[1] : focused ? p[3] : p[2];
       drawText(ctx, label, x, y, color);
       if (focused && Math.floor(this.t * 2) % 2 === 0) {
@@ -140,6 +161,28 @@ class TitleScene implements Scene {
     }
 
     const hint = 'D-PAD + A/START';
+    drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[2]);
+  }
+
+  private drawDifficultyPicker(ctx: CanvasRenderingContext2D, p: readonly string[]): void {
+    const label = 'PICK DIFFICULTY';
+    drawText(ctx, label, Math.floor((SCREEN_W - textWidth(label)) / 2), 56, p[3]);
+    for (let i = 0; i < this.diffs.length; i++) {
+      const d = this.diffs[i];
+      const cfg = DIFFICULTY[d];
+      const y = 72 + i * 10;
+      const focused = i === this.diffIdx;
+      const color = focused ? p[3] : p[2];
+      const x = 18;
+      drawText(ctx, cfg.label, x, y, color);
+      if (focused && Math.floor(this.t * 2) % 2 === 0) {
+        drawText(ctx, '>', x - 6, y, p[3]);
+      }
+    }
+    // Blurb for the focused option, wrapped lightly.
+    const blurb = DIFFICULTY[this.diffs[this.diffIdx]].blurb;
+    drawText(ctx, blurb, Math.floor((SCREEN_W - textWidth(blurb)) / 2), 110, p[2]);
+    const hint = 'A/START:BEGIN  B:BACK';
     drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[2]);
   }
 }

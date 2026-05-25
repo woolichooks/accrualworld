@@ -15,6 +15,7 @@ import { saveMeta, type MetaState } from './meta';
 import type { Scene } from './scene';
 import { wrap } from './text-wrap';
 import type { PuzzleInstance } from './puzzles/types';
+import { DIFFICULTY, type Difficulty } from './types';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
@@ -50,6 +51,7 @@ export class PuzzleScene implements Scene {
   private t = 0;
 
   private scenarioLines: string[];
+  private hintLines: string[] = [];
   private feedbackLines: string[] = [];
   private codexLines: string[] = [];
 
@@ -58,12 +60,16 @@ export class PuzzleScene implements Scene {
     meta: MetaState,
     prev: Scene,
     onClose: (r: PuzzleResult) => Scene,
+    difficulty: Difficulty = 'normal',
   ) {
     this.puzzle = puzzle;
     this.meta = meta;
     this.prev = prev;
     this.onClose = onClose;
     this.scenarioLines = wrap(puzzle.scenario, TEXT_MAX_CHARS);
+    if (DIFFICULTY[difficulty].showHints && puzzle.hint) {
+      this.hintLines = wrap('HINT: ' + puzzle.hint, TEXT_MAX_CHARS);
+    }
     for (const q of puzzle.questions) {
       this.qStates.push({
         mcChoice: 0,
@@ -228,6 +234,14 @@ export class PuzzleScene implements Scene {
     // Scenario (only on first question; subsequent steps free up space)
     let y = 14;
     if (this.currentQ === 0) {
+      // In easy mode, surface a one-line plain-English rule at the
+      // top of the question. Dimmer than the scenario so it reads as
+      // a note, not as part of the situation.
+      for (const ln of this.hintLines) {
+        drawText5(ctx, ln, 4, y, p[2]);
+        y += LINE5_H;
+      }
+      if (this.hintLines.length > 0) y += 2;
       for (const ln of this.scenarioLines) {
         drawText5(ctx, ln, 4, y, p[3]);
         y += LINE5_H;
