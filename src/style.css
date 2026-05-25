@@ -48,9 +48,9 @@ html, body {
 
 /* ---- Handheld bezel ---- */
 .handheld {
-  --w: 360px;
+  --w: 540px;
   width: var(--w);
-  padding: 18px 18px 24px;
+  padding: 22px 22px 28px;
   border-radius: 18px 18px 60px 18px;
   background:
     linear-gradient(180deg, var(--bezel-light) 0%, var(--bezel) 8%, var(--bezel) 92%, var(--bezel-edge) 100%);
@@ -101,8 +101,8 @@ html, body {
 
 #screen {
   display: block;
-  width: 320px;   /* 160 * 2 */
-  height: 288px;  /* 144 * 2 */
+  width: 480px;   /* 160 * 3 */
+  height: 432px;  /* 144 * 3 */
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   background: var(--c3);
@@ -224,8 +224,13 @@ html, body {
   gap: 4px;
 }
 
-/* Tighter layout on small screens */
-@media (max-width: 400px) {
-  .handheld { --w: 320px; }
-  #screen { width: 280px; height: 252px; }
+/* Tighter layout on small screens — fall back to 2x then 1x scaling
+   so the screen still fits a phone without horizontal scroll. */
+@media (max-width: 580px) {
+  .handheld { --w: 360px; padding: 18px 18px 24px; }
+  #screen { width: 320px; height: 288px; } /* 2x */
+}
+@media (max-width: 380px) {
+  .handheld { --w: 200px; padding: 12px 12px 18px; }
+  #screen { width: 160px; height: 144px; } /* 1x */
 }
