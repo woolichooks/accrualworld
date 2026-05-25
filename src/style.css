@@ -27,23 +27,30 @@
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  min-height: 100%;
   background: #0a0908;
   color: var(--label);
   font-family: 'Press Start 2P', ui-monospace, Menlo, Consolas, monospace;
   -webkit-font-smoothing: none;
   font-smooth: never;
-  overflow: hidden;
+  /* Allow the page to scroll when the bezel exceeds the viewport
+     (short browser-chrome heights, landscape phones). Without this
+     the handheld gets cropped top/bottom and puzzle choices end up
+     off-screen with no way to reach them. */
+  overflow-x: hidden;
+  overflow-y: auto;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
 }
 
 #app {
-  position: fixed;
-  inset: 0;
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
+  padding: 8px 0;
 }
 
 /* ---- Handheld bezel ---- */
@@ -175,6 +182,9 @@ html, body {
   font-size: 10px;
   cursor: pointer;
   padding: 0;
+  /* Buttons must not initiate scroll on touch — otherwise tapping
+     the D-pad while the page is scrollable yanks the bezel around. */
+  touch-action: none;
 }
 .dpad button:active, .dpad button.pressed {
   box-shadow:
@@ -213,6 +223,7 @@ html, body {
   font-family: inherit;
   font-size: calc(var(--ab-btn) * 0.32);
   cursor: pointer;
+  touch-action: none;
   box-shadow:
     inset 0 2px 0 rgba(255,255,255,.12),
     inset 0 -3px 0 rgba(0,0,0,.45),
@@ -240,6 +251,7 @@ html, body {
   height: 12px;
   transform: rotate(-18deg);
   cursor: pointer;
+  touch-action: none;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.08),
     inset 0 -2px 0 rgba(0,0,0,.45),
