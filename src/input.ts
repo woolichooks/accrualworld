@@ -1,9 +1,9 @@
 // Virtual handheld buttons. Keyboard + on-screen buttons feed the same
 // state. Game code only reads `pressed` (held) and `justPressed` (edge).
 
-export type Button = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'start' | 'select';
+export type Button = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'start' | 'select' | 'tab';
 
-const BUTTONS: Button[] = ['up', 'down', 'left', 'right', 'a', 'b', 'start', 'select'];
+const BUTTONS: Button[] = ['up', 'down', 'left', 'right', 'a', 'b', 'start', 'select', 'tab'];
 
 // Keyboard mapping:
 //   Arrow keys      -> D-pad
@@ -23,6 +23,9 @@ const KEY_MAP: Record<string, Button> = {
   b: 'b', B: 'b', x: 'b', X: 'b', k: 'b', K: 'b',
   Enter: 'start',
   Shift: 'select',
+  // Tab cycles tabbed UIs (currently the Codex). Default focus
+  // movement is suppressed via preventDefault on keydown.
+  Tab: 'tab',
 };
 
 export class Input {

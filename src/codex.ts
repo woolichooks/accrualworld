@@ -102,7 +102,7 @@ export class CodexScene implements Scene {
       this.scrollOffset = 0;
       this.selectedIdx = 0;
     }
-    if (input.justPressed('right')) {
+    if (input.justPressed('right') || input.justPressed('tab')) {
       this.tabIdx = (this.tabIdx + 1) % TAB_ORDER.length;
       this.scrollOffset = 0;
       this.selectedIdx = 0;
@@ -315,7 +315,7 @@ export class CodexScene implements Scene {
       drawText5(ctx, 'V', SCREEN_W - 8, CONTENT_BOTTOM - LINE5_H, p[3]);
     }
 
-    this.drawFooter(ctx, p, '<> TAB  UD PICK  A OPEN  B BACK');
+    this.drawFooter(ctx, p, 'TAB/<>:TAB  UD:PICK  A:OPEN  B:BACK');
   }
 
   // Drill-in: shows the entry's full content (wrapped) with vertical
