@@ -21,6 +21,9 @@ import { sfx } from './audio';
 const SCREEN_W = 160;
 const SCREEN_H = 144;
 const TEXT_MAX_CHARS = 25;
+// Vertical bounds of the body area (between header bar and footer bar).
+const BODY_TOP = 14;
+const BODY_BOTTOM = SCREEN_H - 12;
 
 export type PuzzleResult =
   | { kind: 'correct'; firstSolve: boolean }
@@ -55,6 +58,12 @@ export class PuzzleScene implements Scene {
   private hintLines: string[] = [];
   private feedbackLines: string[] = [];
   private codexLines: string[] = [];
+
+  // Per-phase scroll offset (in lines). Reset on phase change.
+  private scrollLines = 0;
+  // Per-phase scroll for the scenario area in QUESTION phase. SELECT
+  // advances it (UP/DOWN are reserved for choice navigation).
+  private scenarioScroll = 0;
 
   constructor(
     puzzle: PuzzleInstance,
@@ -100,6 +109,19 @@ export class PuzzleScene implements Scene {
       return this.onClose({ kind: 'cancelled' });
     }
 
+    // SELECT advances the scenario scroll one line and wraps to top
+    // once we've shown the bottom. Cheap, discoverable via the hint
+    // footer, and never collides with choice navigation.
+    if (input.justPressed('select')) {
+      const total = this.scenarioTotalLines();
+      const visible = this.scenarioVisibleLines(q);
+      const maxScroll = Math.max(0, total - visible);
+      if (maxScroll > 0) {
+        this.scenarioScroll = (this.scenarioScroll + 1) % (maxScroll + 1);
+        sfx.cursor();
+      }
+    }
+
     if (q.kind === 'mc') {
       if (input.justPressed('up'))   { st.mcChoice = (st.mcChoice + q.choices.length - 1) % q.choices.length; sfx.cursor(); }
       if (input.justPressed('down')) { st.mcChoice = (st.mcChoice + 1) % q.choices.length; sfx.cursor(); }
@@ -122,6 +144,7 @@ export class PuzzleScene implements Scene {
     this.answers[this.currentQ] = value;
     if (this.currentQ + 1 < this.puzzle.questions.length) {
       this.currentQ += 1;
+      this.scenarioScroll = 0;
       return;
     }
     // Final question answered — evaluate the whole chain.
@@ -131,6 +154,7 @@ export class PuzzleScene implements Scene {
       TEXT_MAX_CHARS,
     );
     this.phase = 'feedback';
+    this.scrollLines = 0;
   }
 
   private evaluate(): void {
@@ -157,6 +181,9 @@ export class PuzzleScene implements Scene {
   }
 
   private updateFeedback(input: Input): Scene | null {
+    const max = this.maxFeedbackScroll();
+    if (input.justPressed('up') && this.scrollLines > 0) { this.scrollLines -= 1; sfx.cursor(); }
+    if (input.justPressed('down') && this.scrollLines < max) { this.scrollLines += 1; sfx.cursor(); }
     if (input.justPressed('b')) {
       const c = this.puzzle.codex;
       const lines: string[] = [];
@@ -169,6 +196,7 @@ export class PuzzleScene implements Scene {
       }
       this.codexLines = lines;
       this.phase = 'codex';
+      this.scrollLines = 0;
       return null;
     }
     if (input.justPressed('a')) {
@@ -182,6 +210,9 @@ export class PuzzleScene implements Scene {
   }
 
   private updateCodex(input: Input): Scene | null {
+    const max = this.maxCodexScroll();
+    if (input.justPressed('up') && this.scrollLines > 0) { this.scrollLines -= 1; sfx.cursor(); }
+    if (input.justPressed('down') && this.scrollLines < max) { this.scrollLines += 1; sfx.cursor(); }
     if (input.justPressed('a') || input.justPressed('b')) {
       return this.onClose(
         this.allCorrect
@@ -190,6 +221,60 @@ export class PuzzleScene implements Scene {
       );
     }
     return null;
+  }
+
+  // ---- Layout helpers --------------------------------------------------
+
+  private bottomBlockHeight(): number {
+    const q = this.puzzle.questions[this.currentQ];
+    if (q.kind === 'mc') {
+      // prompt + (n choices @ LINE5_H+1)
+      return (LINE5_H + 1) + q.choices.length * (LINE5_H + 1) + 2;
+    }
+    // dial: prompt + dial display (~16px)
+    return (LINE5_H + 1) + 16 + 2;
+  }
+
+  private scenarioTotalLines(): number {
+    if (this.currentQ !== 0) return 1; // "NEXT STEP..."
+    const blank = this.hintLines.length > 0 ? 1 : 0;
+    return this.hintLines.length + blank + this.scenarioLines.length;
+  }
+
+  private scenarioVisibleLines(_q: PuzzleInstance['questions'][number]): number {
+    const top = BODY_TOP;
+    const bottom = BODY_BOTTOM - this.bottomBlockHeight() - 4;
+    return Math.max(1, Math.floor((bottom - top) / LINE5_H));
+  }
+
+  private maxFeedbackScroll(): number {
+    const lines = this.feedbackContentLines();
+    const visible = Math.max(1, Math.floor((BODY_BOTTOM - BODY_TOP) / LINE5_H));
+    return Math.max(0, lines.length - visible);
+  }
+
+  private maxCodexScroll(): number {
+    const visible = Math.max(1, Math.floor((BODY_BOTTOM - BODY_TOP - LINE5_H - 2) / LINE5_H));
+    return Math.max(0, this.codexLines.length - visible);
+  }
+
+  private feedbackContentLines(): { text: string; bright: boolean }[] {
+    const out: { text: string; bright: boolean }[] = [];
+    out.push({ text: this.allCorrect ? 'CORRECT' : 'INCORRECT', bright: true });
+    out.push({ text: '', bright: false });
+    for (const ln of this.feedbackLines) out.push({ text: ln, bright: true });
+    if (this.allCorrect) {
+      const parts = Object.entries(this.puzzle.reward.seeds)
+        .filter(([, n]) => n && n > 0)
+        .map(([sp, n]) => `+${n} ${sp.toUpperCase()}`);
+      if (parts.length) {
+        out.push({ text: '', bright: false });
+        for (const ln of wrap('REWARD: ' + parts.join('  '), TEXT_MAX_CHARS)) {
+          out.push({ text: ln, bright: true });
+        }
+      }
+    }
+    return out;
   }
 
   // ---- Draw -----------------------------------------------------------
@@ -224,40 +309,60 @@ export class PuzzleScene implements Scene {
     let hint: string;
     if (this.phase === 'question') {
       const q = this.puzzle.questions[this.currentQ];
-      hint = q.kind === 'dial' ? 'LR:DIGIT UD:VALUE A:OK' : 'A:CONFIRM   B:CANCEL';
-    } else if (this.phase === 'feedback') hint = 'B:WHY?   A:CLOSE';
-    else hint = 'A/B: CLOSE';
+      // Surface SEL:MORE only when there's content to scroll.
+      const total = this.scenarioTotalLines();
+      const visible = this.scenarioVisibleLines(q);
+      const canScroll = total > visible;
+      const base = q.kind === 'dial' ? 'LR:DIG UD:VAL A:OK' : 'A:OK B:CANCEL';
+      hint = canScroll ? base + '  SEL:MORE' : base;
+    } else if (this.phase === 'feedback') {
+      hint = this.maxFeedbackScroll() > 0 ? 'UD:SCROLL B:WHY? A:CLOSE' : 'B:WHY?  A:CLOSE';
+    } else {
+      hint = this.maxCodexScroll() > 0 ? 'UD:SCROLL  A/B:CLOSE' : 'A/B: CLOSE';
+    }
     drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[3]);
   }
 
+  // QUESTION: bottom-anchored prompt + choices. Scenario above is
+  // clipped to the remaining viewport and scrolls on SELECT.
   private drawQuestion(ctx: CanvasRenderingContext2D, p: Palette): void {
-    // Scenario (only on first question; subsequent steps free up space)
-    let y = 14;
+    const q = this.puzzle.questions[this.currentQ];
+    const bottomH = this.bottomBlockHeight();
+    const bottomY = BODY_BOTTOM - bottomH;
+
+    // Top viewport for scenario + hint.
+    const topY = BODY_TOP;
+    const topMaxY = bottomY - 4;
+    const viewportLines = Math.max(1, Math.floor((topMaxY - topY) / LINE5_H));
+
+    // Build flat line list for the top area.
+    const lines: { text: string; bright: boolean }[] = [];
     if (this.currentQ === 0) {
-      // In easy mode, surface a one-line plain-English rule at the
-      // top of the question. Dimmer than the scenario so it reads as
-      // a note, not as part of the situation.
-      for (const ln of this.hintLines) {
-        drawText5(ctx, ln, 4, y, p[2]);
-        y += LINE5_H;
-      }
-      if (this.hintLines.length > 0) y += 2;
-      for (const ln of this.scenarioLines) {
-        drawText5(ctx, ln, 4, y, p[3]);
-        y += LINE5_H;
-      }
-      y += 2;
+      for (const ln of this.hintLines) lines.push({ text: ln, bright: false });
+      if (this.hintLines.length > 0) lines.push({ text: '', bright: false });
+      for (const ln of this.scenarioLines) lines.push({ text: ln, bright: true });
     } else {
-      drawText5(ctx, 'NEXT STEP...', 4, y, p[2]);
-      y += LINE5_H + 2;
+      lines.push({ text: 'NEXT STEP...', bright: false });
     }
 
-    const q = this.puzzle.questions[this.currentQ];
-    drawText5(ctx, q.prompt, 4, y, p[2]);
-    y += LINE5_H + 1;
+    const total = lines.length;
+    const maxScroll = Math.max(0, total - viewportLines);
+    const scroll = Math.min(this.scenarioScroll, maxScroll);
+    const visible = lines.slice(scroll, scroll + viewportLines);
 
-    if (q.kind === 'mc') this.drawMC(ctx, p, y);
-    else this.drawDial(ctx, p, y);
+    let y = topY;
+    for (const ln of visible) {
+      drawText5(ctx, ln.text, 4, y, ln.bright ? p[3] : p[2]);
+      y += LINE5_H;
+    }
+    // Scroll indicators.
+    if (scroll > 0) drawText5(ctx, '^', SCREEN_W - 8, topY, p[3]);
+    if (scroll < maxScroll) drawText5(ctx, 'V', SCREEN_W - 8, topMaxY - LINE5_H, p[3]);
+
+    // Prompt + choices/dial anchored at the bottom.
+    drawText5(ctx, q.prompt, 4, bottomY, p[2]);
+    if (q.kind === 'mc') this.drawMC(ctx, p, bottomY + LINE5_H + 1);
+    else this.drawDial(ctx, p, bottomY + LINE5_H + 1);
   }
 
   private drawMC(ctx: CanvasRenderingContext2D, p: Palette, startY: number): void {
@@ -280,12 +385,10 @@ export class PuzzleScene implements Scene {
     const q = this.puzzle.questions[this.currentQ];
     if (q.kind !== 'dial') return;
     const st = this.qStates[this.currentQ];
-    // Render digits as a centered block. Decimal point inserted at the
-    // correct position. Focus underline pulses to show the active digit.
     const digitGap = 1;
     const digitW = 5;
     const dotW = 2;
-    const dotPositions = q.digits - q.decimals; // dot after this many leading digits
+    const dotPositions = q.digits - q.decimals;
     const totalW =
       q.digits * (digitW + digitGap) - digitGap +
       (q.decimals > 0 ? dotW + digitGap : 0) +
@@ -299,14 +402,12 @@ export class PuzzleScene implements Scene {
     }
     for (let i = 0; i < q.digits; i++) {
       if (i === dotPositions && q.decimals > 0) {
-        // Decimal point
         ctx.fillStyle = p[3];
         ctx.fillRect(x, y + GLYPH5_H - 1, 1, 1);
         x += dotW + digitGap;
       }
       const digit = `${st.dialDigits[i]}`;
       drawText5(ctx, digit, x, y, p[3]);
-      // Underline focused digit (pulse).
       if (i === st.dialFocus && Math.floor(this.t * 4) % 2 === 0) {
         ctx.fillStyle = p[3];
         ctx.fillRect(x, y + GLYPH5_H + 1, digitW, 1);
@@ -316,37 +417,31 @@ export class PuzzleScene implements Scene {
   }
 
   private drawFeedback(ctx: CanvasRenderingContext2D, p: Palette): void {
-    const verdict = this.allCorrect ? 'CORRECT' : 'INCORRECT';
-    drawText5(ctx, verdict, 4, 16, p[3]);
-
-    let y = 16 + LINE5_H + 2;
-    for (const ln of this.feedbackLines) {
-      drawText5(ctx, ln, 4, y, p[3]);
+    const content = this.feedbackContentLines();
+    const visible = Math.max(1, Math.floor((BODY_BOTTOM - BODY_TOP) / LINE5_H));
+    const max = Math.max(0, content.length - visible);
+    const scroll = Math.min(this.scrollLines, max);
+    let y = BODY_TOP + 2;
+    for (let i = scroll; i < Math.min(content.length, scroll + visible); i++) {
+      drawText5(ctx, content[i].text, 4, y, content[i].bright ? p[3] : p[2]);
       y += LINE5_H;
     }
-
-    if (this.allCorrect) {
-      const parts = Object.entries(this.puzzle.reward.seeds)
-        .filter(([, n]) => n && n > 0)
-        .map(([sp, n]) => `+${n} ${sp.toUpperCase()}`);
-      if (parts.length) {
-        y += 3;
-        const rewardLines = wrap('REWARD: ' + parts.join('  '), TEXT_MAX_CHARS);
-        for (const ln of rewardLines) {
-          drawText5(ctx, ln, 4, y, p[3]);
-          y += LINE5_H;
-        }
-      }
-    }
+    if (scroll > 0) drawText5(ctx, '^', SCREEN_W - 8, BODY_TOP + 2, p[3]);
+    if (scroll < max) drawText5(ctx, 'V', SCREEN_W - 8, BODY_BOTTOM - LINE5_H - 2, p[3]);
   }
 
   private drawCodex(ctx: CanvasRenderingContext2D, p: Palette): void {
-    drawText5(ctx, 'CODEX OF STANDARDS', 4, 16, p[3]);
-    let y = 16 + LINE5_H + 2;
-    for (const ln of this.codexLines) {
-      drawText5(ctx, ln, 4, y, p[3]);
+    drawText5(ctx, 'CODEX OF STANDARDS', 4, BODY_TOP + 2, p[3]);
+    const headerH = LINE5_H + 2;
+    const visible = Math.max(1, Math.floor((BODY_BOTTOM - BODY_TOP - headerH) / LINE5_H));
+    const max = Math.max(0, this.codexLines.length - visible);
+    const scroll = Math.min(this.scrollLines, max);
+    let y = BODY_TOP + headerH + 2;
+    for (let i = scroll; i < Math.min(this.codexLines.length, scroll + visible); i++) {
+      drawText5(ctx, this.codexLines[i], 4, y, p[3]);
       y += LINE5_H;
     }
+    if (scroll > 0) drawText5(ctx, '^', SCREEN_W - 8, BODY_TOP + headerH + 2, p[3]);
+    if (scroll < max) drawText5(ctx, 'V', SCREEN_W - 8, BODY_BOTTOM - LINE5_H - 2, p[3]);
   }
 }
-
