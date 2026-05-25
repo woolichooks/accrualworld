@@ -13,8 +13,18 @@ export const inv_lcnrv_t1: PuzzleTemplate = {
   id: 'inv-lcnrv-t1',
   topic: '330',
   tier: 1,
-  displayName: 'ASC 330 - INVENTORY',
+  displayName: 'ASC 330 - INVENTORY (T1)',
   blurb: 'LOWER OF COST OR NRV',
+  staticCodex: {
+    citation: 'ASC 330-10-35-1B',
+    excerpt:
+      'INVENTORY (NON-LIFO) IS MEASURED AT THE LOWER OF COST AND ' +
+      'NET REALIZABLE VALUE. NRV = SELLING PRICE LESS PREDICTABLE ' +
+      'COSTS OF DISPOSAL.',
+    note:
+      'WRITE-DOWNS ARE RECOGNIZED IN THE PERIOD AND ARE NOT ' +
+      'REVERSED IF NRV LATER RECOVERS.',
+  },
 
   generate(rng: Rng, sol: number): PuzzleInstance {
     // Cost in whole dollars; SP differs from cost by at least 3 either
@@ -55,8 +65,7 @@ export const inv_lcnrv_t1: PuzzleTemplate = {
         `COST       $${cost}/UNIT\n` +
         `TRADE PRICE $${sp}/UNIT\n` +
         `DECONTAM    $${cts}/UNIT`,
-      question: 'CARRY EACH UNIT AT:',
-      choices,
+      questions: [{ kind: 'mc', prompt: 'CARRY EACH UNIT AT:', choices }],
       feedbackCorrect:
         `FILED. NRV = $${sp} - $${cts} = $${nrv}. ` +
         `CARRY AT THE LOWER OF COST AND NRV. ${writeDownLine}`,

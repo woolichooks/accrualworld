@@ -1,6 +1,14 @@
 // Shared run-state types. Persisted to localStorage as `accrualworld.run.v1`.
 
-export type SpeciesId = 'mint' | 'sunflower' | 'basil';
+export type SpeciesId =
+  | 'mint'
+  | 'sunflower'
+  | 'basil'
+  | 'chamomile'
+  | 'potato'
+  | 'aloe'
+  | 'garlic'
+  | 'lavender';
 
 export type GrowthStage = 0 | 1 | 2 | 3 | 4;
 // 0 empty | 1 seed | 2 sprout | 3 growing | 4 mature
@@ -52,4 +60,7 @@ export const GRID_W = 6;
 export const GRID_H = 4;
 export const TILE_PX = 18;
 
-export const SPECIES: SpeciesId[] = ['mint', 'sunflower', 'basil'];
+export const SPECIES: SpeciesId[] = [
+  'mint', 'sunflower', 'basil',
+  'chamomile', 'potato', 'aloe', 'garlic', 'lavender',
+];

@@ -36,6 +36,44 @@ export const MUTATIONS: Record<SpeciesId, Mutation> = {
     harvestBonus: '+2 HUL',
     apply: (s) => { s.shelter.hull = clamp(s.shelter.hull + 2); },
   },
+  // Tier 2 mutations — bigger single-stat restores. The plants
+  // themselves take longer to mature (see SPECIES_DATA), so the
+  // higher payoff is offset by a longer growth window.
+  chamomile: {
+    id: 'glassbloom',
+    name: 'GLASSBLOOM',
+    harvestBonus: '+3 HUL',
+    apply: (s) => { s.shelter.hull = clamp(s.shelter.hull + 3); },
+  },
+  potato: {
+    id: 'emberspud',
+    name: 'EMBERSPUD',
+    harvestBonus: '+3 PWR',
+    apply: (s) => { s.shelter.power = clamp(s.shelter.power + 3); },
+  },
+  aloe: {
+    id: 'soothevine',
+    name: 'SOOTHEVINE',
+    harvestBonus: '+3 OXY',
+    apply: (s) => { s.shelter.oxygen = clamp(s.shelter.oxygen + 3); },
+  },
+  // Resource mutations — utility-flavored.
+  garlic: {
+    id: 'sporeclove',
+    name: 'SPORECLOVE',
+    harvestBonus: '+1 EACH SEED',
+    apply: (s) => {
+      for (const sp of Object.keys(s.inventory.seeds) as SpeciesId[]) {
+        s.inventory.seeds[sp] += 1;
+      }
+    },
+  },
+  lavender: {
+    id: 'dreampetal',
+    name: 'DREAMPETAL',
+    harvestBonus: '+5 WATER',
+    apply: (s) => { s.inventory.water += 5; },
+  },
 };
 
 // Roll mutation independently on each growing plant. Returns the
@@ -69,6 +107,11 @@ export const SPECIES_DATA: Record<SpeciesId, Species> = {
   mint:      { id: 'mint',      name: 'MINT',  secondsPerStage: 8,  yieldPerHarvest: 2, toneIdx: 3 },
   sunflower: { id: 'sunflower', name: 'SUN',   secondsPerStage: 10, yieldPerHarvest: 1, toneIdx: 3 },
   basil:     { id: 'basil',     name: 'BASIL', secondsPerStage: 9,  yieldPerHarvest: 2, toneIdx: 2 },
+  chamomile: { id: 'chamomile', name: 'CHAM',  secondsPerStage: 12, yieldPerHarvest: 1, toneIdx: 3 },
+  potato:    { id: 'potato',    name: 'POT',   secondsPerStage: 14, yieldPerHarvest: 3, toneIdx: 2 },
+  aloe:      { id: 'aloe',      name: 'ALOE',  secondsPerStage: 12, yieldPerHarvest: 1, toneIdx: 2 },
+  garlic:    { id: 'garlic',    name: 'GARL',  secondsPerStage: 10, yieldPerHarvest: 2, toneIdx: 3 },
+  lavender:  { id: 'lavender',  name: 'LAV',   secondsPerStage: 11, yieldPerHarvest: 1, toneIdx: 3 },
 };
 
 // Draw a tile's contents at top-left (x, y) into an 18x18 area.
@@ -153,6 +196,48 @@ export function drawTile(
         ctx.fillRect(cx - 2, base - 8, 5, 1);
         ctx.fillRect(cx - 1, base - 9, 3, 1);
         break;
+      case 'chamomile':
+        // 5-petal flower with a dark center pip
+        ctx.fillRect(cx - 1, base - 7, 3, 1);
+        ctx.fillRect(cx - 2, base - 8, 1, 1);
+        ctx.fillRect(cx + 2, base - 8, 1, 1);
+        ctx.fillRect(cx, base - 9, 1, 1);
+        ctx.fillStyle = dark;
+        ctx.fillRect(cx, base - 8, 1, 1);
+        break;
+      case 'potato':
+        // Round bushy mass
+        ctx.fillRect(cx - 2, base - 6, 5, 1);
+        ctx.fillRect(cx - 2, base - 7, 5, 1);
+        ctx.fillRect(cx - 1, base - 8, 3, 1);
+        ctx.fillStyle = dark;
+        ctx.fillRect(cx - 1, base - 7, 1, 1);
+        ctx.fillRect(cx + 1, base - 6, 1, 1);
+        break;
+      case 'aloe':
+        // Radial spikes
+        ctx.fillRect(cx, base - 8, 1, 2);
+        ctx.fillRect(cx - 2, base - 7, 1, 1);
+        ctx.fillRect(cx + 2, base - 7, 1, 1);
+        ctx.fillRect(cx - 1, base - 8, 1, 1);
+        ctx.fillRect(cx + 1, base - 8, 1, 1);
+        break;
+      case 'garlic':
+        // Bulb at base with thin shoots
+        ctx.fillRect(cx - 2, base - 1, 5, 1);
+        ctx.fillRect(cx - 1, base - 2, 3, 1);
+        ctx.fillRect(cx, base - 9, 1, 3);
+        ctx.fillRect(cx + 1, base - 8, 1, 2);
+        break;
+      case 'lavender':
+        // Tall cluster on a thin stem
+        ctx.fillRect(cx, base - 10, 1, 1);
+        ctx.fillRect(cx - 1, base - 9, 3, 1);
+        ctx.fillRect(cx, base - 8, 1, 1);
+        ctx.fillRect(cx - 1, base - 7, 3, 1);
+        ctx.fillStyle = dark;
+        ctx.fillRect(cx, base - 9, 1, 1);
+        break;
     }
   }
 
@@ -196,6 +281,37 @@ export function drawSeedIcon(
     case 'basil':
       ctx.fillRect(x + 1, y + 2, 3, 1);
       ctx.fillRect(x + 2, y + 1, 1, 3);
+      break;
+    case 'chamomile':
+      // five dots radiating
+      ctx.fillRect(x + 2, y + 1, 1, 1);
+      ctx.fillRect(x + 1, y + 2, 1, 1);
+      ctx.fillRect(x + 3, y + 2, 1, 1);
+      ctx.fillRect(x + 2, y + 3, 1, 1);
+      ctx.fillStyle = p[0];
+      ctx.fillRect(x + 2, y + 2, 1, 1);
+      break;
+    case 'potato':
+      // chunky bulb
+      ctx.fillRect(x + 1, y + 1, 3, 3);
+      break;
+    case 'aloe':
+      // V of spikes
+      ctx.fillRect(x + 1, y + 1, 1, 1);
+      ctx.fillRect(x + 3, y + 1, 1, 1);
+      ctx.fillRect(x + 2, y + 2, 1, 1);
+      ctx.fillRect(x + 2, y + 3, 1, 1);
+      break;
+    case 'garlic':
+      // bulb base
+      ctx.fillRect(x + 1, y + 2, 3, 2);
+      ctx.fillRect(x + 2, y + 1, 1, 1);
+      break;
+    case 'lavender':
+      // tall sprig
+      ctx.fillRect(x + 2, y + 1, 1, 3);
+      ctx.fillRect(x + 1, y + 2, 1, 1);
+      ctx.fillRect(x + 3, y + 2, 1, 1);
       break;
   }
 }

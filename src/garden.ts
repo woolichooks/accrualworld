@@ -291,26 +291,28 @@ export class GardenScene implements Scene {
     // (H2O moved into the shelter-stats row below the grid.)
   }
 
-  // Always-visible stock for all species: <icon> <name> <seeds>/<leaves>.
-  // The currently selected seed (for planting) is brightened + marked with '>'.
+  // Compact stock row for all 8 species in a single line. Each chunk:
+  // <icon> <seeds>/<leaves>. The currently selected seed renders in
+  // p[3] with a tiny underline; others in p[2]. Full names are not
+  // shown to keep this in 160px — the tile-status row and brew bench
+  // both show the full name when needed.
   private drawStockPanel(ctx: CanvasRenderingContext2D, p: Palette): void {
-    const y = GRID_Y + GRID_H * TILE_PX + 4; // 4px below grid
-    // Three chunks evenly distributed across the screen width.
-    const chunkW = Math.floor(SCREEN_W / 3);
+    const y = GRID_Y + GRID_H * TILE_PX + 4;
+    const chunkW = Math.floor(SCREEN_W / SPECIES.length); // 20px each
     for (let i = 0; i < SPECIES.length; i++) {
       const sp = SPECIES[i];
-      const sd = SPECIES_DATA[sp];
       const seeds = this.state.inventory.seeds[sp];
       const leaves = this.state.inventory.harvested[sp];
       const selected = this.state.selectedSeed === sp;
-
-      const text = `${sd.name} ${seeds}/${leaves}`;
-      const totalW = 5 + 2 + textWidth(text); // icon + gap + text
-      const x = i * chunkW + Math.floor((chunkW - totalW) / 2);
-
+      const x = i * chunkW + 1;
       drawSeedIcon(ctx, x, y, sp, p);
-      drawText(ctx, text, x + 7, y, selected ? p[3] : p[2]);
-      if (selected) drawText(ctx, '>', x - 4, y, p[3]);
+      const text = `${seeds}/${leaves}`;
+      drawText(ctx, text, x + 6, y, selected ? p[3] : p[2]);
+      if (selected) {
+        // Underline marker so the selection reads at a glance.
+        ctx.fillStyle = p[3];
+        ctx.fillRect(x, y + 7, chunkW - 2, 1);
+      }
     }
   }
 

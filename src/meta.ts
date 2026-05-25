@@ -27,7 +27,10 @@ export function newMeta(): MetaState {
     schema: 1,
     ledgerMarks: { '305': 0, '330': 0, '360': 0 },
     codexSeen: [],
-    seedsEarned: { mint: 0, sunflower: 0, basil: 0 },
+    seedsEarned: {
+      mint: 0, sunflower: 0, basil: 0,
+      chamomile: 0, potato: 0, aloe: 0, garlic: 0, lavender: 0,
+    },
     witnessedWonders: [],
     discoveredRecipes: [],
   };
@@ -42,7 +45,13 @@ export function loadMeta(): MetaState {
     // Backfill missing fields defensively.
     data.ledgerMarks ??= { '305': 0, '330': 0, '360': 0 };
     data.codexSeen ??= [];
-    data.seedsEarned ??= { mint: 0, sunflower: 0, basil: 0 };
+    data.seedsEarned ??= {
+      mint: 0, sunflower: 0, basil: 0,
+      chamomile: 0, potato: 0, aloe: 0, garlic: 0, lavender: 0,
+    };
+    // Backfill any missing species keys from milestone 8.
+    const newSpecies: SpeciesId[] = ['chamomile', 'potato', 'aloe', 'garlic', 'lavender'];
+    for (const sp of newSpecies) data.seedsEarned[sp] ??= 0;
     data.witnessedWonders ??= [];
     data.discoveredRecipes ??= [];
     return data;

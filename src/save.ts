@@ -1,7 +1,7 @@
 // Run save/load. Meta-progression will live under a separate key
 // (`accrualworld.meta.v1`) added in a later milestone.
 
-import { GRID_W, GRID_H, type RunState, type Tile } from './types';
+import { GRID_W, GRID_H, type RunState, type SpeciesId, type Tile } from './types';
 
 const KEY = 'accrualworld.run.v1';
 
@@ -18,9 +18,17 @@ export function newRun(): RunState {
     cursor: { x: 0, y: 0 },
     selectedSeed: 'mint',
     inventory: {
-      seeds: { mint: 4, sunflower: 2, basil: 2 },
+      // Starter seeds: original 3 species. The other 5 must be
+      // earned via puzzle rewards (or future content unlocks).
+      seeds: {
+        mint: 4, sunflower: 2, basil: 2,
+        chamomile: 0, potato: 0, aloe: 0, garlic: 0, lavender: 0,
+      },
       water: 8,
-      harvested: { mint: 0, sunflower: 0, basil: 0 },
+      harvested: {
+        mint: 0, sunflower: 0, basil: 0,
+        chamomile: 0, potato: 0, aloe: 0, garlic: 0, lavender: 0,
+      },
     },
     shelter: { hull: 10, oxygen: 10, power: 10 },
     sol: 1,
@@ -38,9 +46,19 @@ export function loadRun(): RunState | null {
     if (data.schema !== 1) return null;
     if (!Array.isArray(data.tiles) || data.tiles.length !== GRID_W * GRID_H) return null;
     // Backfill any fields a slightly older save might be missing.
-    data.inventory ??= { seeds: { mint: 0, sunflower: 0, basil: 0 }, water: 0, harvested: { mint: 0, sunflower: 0, basil: 0 } };
-    data.inventory.harvested ??= { mint: 0, sunflower: 0, basil: 0 };
-    data.inventory.seeds ??= { mint: 0, sunflower: 0, basil: 0 };
+    const zeroSeeds = (): Record<SpeciesId, number> => ({
+      mint: 0, sunflower: 0, basil: 0,
+      chamomile: 0, potato: 0, aloe: 0, garlic: 0, lavender: 0,
+    });
+    data.inventory ??= { seeds: zeroSeeds(), water: 0, harvested: zeroSeeds() };
+    data.inventory.harvested ??= zeroSeeds();
+    data.inventory.seeds ??= zeroSeeds();
+    // Backfill any missing species keys (milestone 8 added 5 new ones).
+    const newSpecies: SpeciesId[] = ['chamomile', 'potato', 'aloe', 'garlic', 'lavender'];
+    for (const sp of newSpecies) {
+      data.inventory.seeds[sp] ??= 0;
+      data.inventory.harvested[sp] ??= 0;
+    }
     // Day/night fields added in milestone 4 — backfill for older saves.
     data.phase ??= 'day';
     data.phaseTime ??= 0;

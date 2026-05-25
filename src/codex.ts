@@ -53,6 +53,9 @@ interface Entry {
   title: string;
   detail: string;
   locked: boolean;
+  // Long-form lines shown in the drill-in view. Falls back to the
+  // detail line when undefined.
+  full?: string[];
 }
 
 export class CodexScene implements Scene {
@@ -60,6 +63,9 @@ export class CodexScene implements Scene {
   private prev: Scene;
   private tabIdx = 0;
   private scrollOffset = 0;
+  private selectedIdx = 0;  // index within visible entries for drill-in
+  private detailEntry: Entry | null = null;
+  private detailScroll = 0;
   private t = 0;
 
   constructor(state: RunState, prev: Scene) {
@@ -73,20 +79,48 @@ export class CodexScene implements Scene {
 
   update(dt: number, input: Input): Scene | null {
     this.t += dt;
+
+    // ---- Detail view -----------------------------------------------
+    if (this.detailEntry) {
+      if (input.justPressed('b') || input.justPressed('a')) {
+        this.detailEntry = null;
+        this.detailScroll = 0;
+        return null;
+      }
+      if (input.justPressed('up') && this.detailScroll > 0) this.detailScroll -= 1;
+      if (input.justPressed('down')) {
+        const total = this.detailEntry.full?.length ?? 0;
+        if (this.detailScroll < total - 1) this.detailScroll += 1;
+      }
+      return null;
+    }
+
+    // ---- List view -------------------------------------------------
     if (input.justPressed('b') || input.justPressed('start')) return this.prev;
     if (input.justPressed('left')) {
       this.tabIdx = (this.tabIdx + TAB_ORDER.length - 1) % TAB_ORDER.length;
       this.scrollOffset = 0;
+      this.selectedIdx = 0;
     }
     if (input.justPressed('right')) {
       this.tabIdx = (this.tabIdx + 1) % TAB_ORDER.length;
       this.scrollOffset = 0;
+      this.selectedIdx = 0;
     }
-    // Up/down scrolls one entry at a time. Clamping happens in render.
-    if (input.justPressed('up') && this.scrollOffset > 0) this.scrollOffset -= 1;
+    if (input.justPressed('up') && this.selectedIdx > 0) this.selectedIdx -= 1;
     if (input.justPressed('down')) {
       const entries = this.entriesFor(TAB_ORDER[this.tabIdx]);
-      if (this.scrollOffset < entries.length - 1) this.scrollOffset += 1;
+      if (this.selectedIdx < entries.length - 1) this.selectedIdx += 1;
+    }
+    // Auto-scroll so the focused entry stays visible.
+    if (this.selectedIdx < this.scrollOffset) this.scrollOffset = this.selectedIdx;
+    if (input.justPressed('a')) {
+      const entries = this.entriesFor(TAB_ORDER[this.tabIdx]);
+      const e = entries[this.selectedIdx];
+      if (e && !e.locked && e.full && e.full.length > 0) {
+        this.detailEntry = e;
+        this.detailScroll = 0;
+      }
     }
     return null;
   }
@@ -111,6 +145,16 @@ export class CodexScene implements Scene {
           title: t.displayName,
           detail: seen ? t.blurb : 'NOT YET ENCOUNTERED',
           locked: !seen,
+          full: seen
+            ? [
+                `TOPIC: ASC ${t.topic} - TIER ${t.tier}`,
+                '',
+                t.staticCodex.citation,
+                '',
+                t.staticCodex.excerpt,
+                ...(t.staticCodex.note ? ['', 'PRACTICAL NOTE:', t.staticCodex.note] : []),
+              ]
+            : undefined,
         };
       });
     }
@@ -121,6 +165,7 @@ export class CodexScene implements Scene {
           title: w.name,
           detail: seen ? w.description : 'NOT YET WITNESSED',
           locked: !seen,
+          full: seen ? [w.description, '', 'SEEN ONLY AT NIGHT, AWAKE.'] : undefined,
         };
       });
     }
@@ -128,12 +173,20 @@ export class CodexScene implements Scene {
       return RECIPES.map((r) => {
         const seen = meta.discoveredRecipes.includes(r.id);
         const ing = Object.entries(r.ingredients)
-          .map(([sp, n]) => `${n}${sp[0].toUpperCase()}`)
-          .join('+');
+          .map(([sp, n]) => `${n}x ${sp.toUpperCase()}`)
+          .join(' + ');
         return {
           title: seen ? r.name : '???',
           detail: seen ? `${ing}  ${r.effect}` : 'NOT YET BREWED',
           locked: !seen,
+          full: seen
+            ? [
+                `INGREDIENTS: ${ing}`,
+                `EFFECT: ${r.effect}`,
+                '',
+                'BREWED AT THE COLONY BENCH.',
+              ]
+            : undefined,
         };
       });
     }
@@ -145,6 +198,13 @@ export class CodexScene implements Scene {
           title: m.name,
           detail: `${sp.toUpperCase()} ${m.harvestBonus} ON HARVEST`,
           locked: false,
+          full: [
+            `HOST PLANT: ${sp.toUpperCase()}`,
+            `HARVEST BONUS: ${m.harvestBonus}`,
+            '',
+            'TRIGGERED BY WONDERS AND THREATS.',
+            'EACH GROWING PLANT ROLLS 35%.',
+          ],
         };
       });
     }
@@ -169,6 +229,13 @@ export class CodexScene implements Scene {
     ctx.fillRect(0, 0, SCREEN_W, 11);
     ctx.fillStyle = p[3];
     ctx.fillRect(0, 10, SCREEN_W, 1);
+    if (this.detailEntry) {
+      const title = `CODEX  ${this.detailEntry.title}`;
+      drawText(ctx, title, 4, 3, p[3]);
+      this.drawDetail(ctx, p);
+      this.drawFooter(ctx, p, 'A/B: BACK');
+      return;
+    }
     const title = `CODEX  ${TAB_HEADER[TAB_ORDER[this.tabIdx]]}`;
     drawText(ctx, title, 4, 3, p[3]);
 
@@ -200,13 +267,19 @@ export class CodexScene implements Scene {
         const e = entries[i];
         const w = this.wrapEntry(e);
         if (y + w.height > CONTENT_BOTTOM) break;
+        const focused = i === this.selectedIdx;
         const titleColor = e.locked ? p[2] : p[3];
+        // Blinking '>' marker on the focused entry so the player
+        // can see which entry A will drill into.
+        if (focused && Math.floor(this.t * 3) % 2 === 0) {
+          drawText5(ctx, '>', 0, y, p[3]);
+        }
         for (const ln of w.title) {
-          drawText5(ctx, ln, 4, y, titleColor);
+          drawText5(ctx, ln, 6, y, titleColor);
           y += LINE5_H;
         }
         for (const ln of w.detail) {
-          drawText5(ctx, ln, 8, y, p[2]);
+          drawText5(ctx, ln, 10, y, p[2]);
           y += LINE5_H;
         }
         y += ENTRY_SPACER;
@@ -222,12 +295,31 @@ export class CodexScene implements Scene {
       drawText5(ctx, 'V', SCREEN_W - 8, CONTENT_BOTTOM - LINE5_H, p[3]);
     }
 
-    // Footer
+    this.drawFooter(ctx, p, '<> TAB  UD PICK  A OPEN  B BACK');
+  }
+
+  // Drill-in: shows the entry's full content (wrapped) with vertical
+  // scroll. Footer is drawn by the caller.
+  private drawDetail(ctx: CanvasRenderingContext2D, p: Palette): void {
+    if (!this.detailEntry) return;
+    const lines: string[] = [];
+    for (const para of this.detailEntry.full ?? []) {
+      if (para === '') { lines.push(''); continue; }
+      lines.push(...wrap(para, TITLE_CHARS));
+    }
+    let y = CONTENT_TOP;
+    for (let i = this.detailScroll; i < lines.length; i++) {
+      if (y + LINE5_H > CONTENT_BOTTOM) break;
+      drawText5(ctx, lines[i], 4, y, p[3]);
+      y += LINE5_H;
+    }
+  }
+
+  private drawFooter(ctx: CanvasRenderingContext2D, p: Palette, hint: string): void {
     ctx.fillStyle = p[1];
     ctx.fillRect(0, SCREEN_H - 10, SCREEN_W, 10);
     ctx.fillStyle = p[3];
     ctx.fillRect(0, SCREEN_H - 10, SCREEN_W, 1);
-    const hint = '<> TAB  UD SCROLL  B BACK';
     drawText(ctx, hint, Math.floor((SCREEN_W - textWidth(hint)) / 2), SCREEN_H - 7, p[3]);
   }
 }

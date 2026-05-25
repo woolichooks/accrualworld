@@ -61,8 +61,18 @@ export const ppe_cap_expense_t1: PuzzleTemplate = {
   id: 'ppe-cap-expense-t1',
   topic: '360',
   tier: 1,
-  displayName: 'ASC 360 - PP&E',
+  displayName: 'ASC 360 - PP&E (T1)',
   blurb: 'CAPITALIZE VS EXPENSE',
+  staticCodex: {
+    citation: 'ASC 360-10-30 / 360-10-35',
+    excerpt:
+      'COSTS THAT EXTEND USEFUL LIFE OR INCREASE CAPACITY ARE ' +
+      'CAPITALIZED AND DEPRECIATED. ROUTINE REPAIRS THAT MAINTAIN ' +
+      'EXISTING SERVICE ARE EXPENSED AS INCURRED.',
+    note:
+      'TEST: BETTER OR LONGER-LIVED (CAPITALIZE), OR JUST RUNNING ' +
+      '(EXPENSE)?',
+  },
 
   generate(rng: Rng, sol: number): PuzzleInstance {
     const item = rng.pick(POOL);
@@ -82,8 +92,7 @@ export const ppe_cap_expense_t1: PuzzleTemplate = {
         `YUMI ASKS HOW TO POST THIS.\n` +
         `\n` +
         item.desc,
-      question: 'POST AS:',
-      choices,
+      questions: [{ kind: 'mc', prompt: 'POST AS:', choices }],
       feedbackCorrect: `${item.answer}. ${item.rationale}`,
       feedbackIncorrect:
         `YUMI MARKS IT UP. CORRECT TREATMENT IS ` +

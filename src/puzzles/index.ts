@@ -4,12 +4,16 @@
 
 import { Rng, randomSeed } from '../rng';
 import { inv_lcnrv_t1 } from './templates/inv_lcnrv_t1';
+import { inv_lcnrv_t2 } from './templates/inv_lcnrv_t2';
+import { inv_lcnrv_t3 } from './templates/inv_lcnrv_t3';
 import { cash_classify_t1 } from './templates/cash_classify_t1';
 import { ppe_cap_expense_t1 } from './templates/ppe_cap_expense_t1';
 import type { PuzzleInstance, PuzzleTemplate } from './types';
 
 export const TEMPLATES: PuzzleTemplate[] = [
   inv_lcnrv_t1,
+  inv_lcnrv_t2,
+  inv_lcnrv_t3,
   cash_classify_t1,
   ppe_cap_expense_t1,
 ];

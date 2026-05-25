@@ -14,39 +14,79 @@ import type { Palette, PaletteName } from './palette';
 import { saveRun } from './save';
 import type { Scene } from './scene';
 import { mutateGardenPlants } from './species';
-import type { RunState, Shelter } from './types';
+import type { RunState } from './types';
 import { GameOverScene } from './gameover';
 
 const SCREEN_W = 160;
 const SCREEN_H = 144;
 
-export type ThreatId = 'meteor_strike' | 'acrid_fog' | 'power_surge';
+export type ThreatId =
+  | 'meteor_strike'
+  | 'acrid_fog'
+  | 'power_surge'
+  | 'double_strike'
+  | 'plant_blight';
 
 interface ThreatDef {
   id: ThreatId;
   label: string;
-  apply(s: Shelter): void;
+  // applyTo gets both Shelter and the full RunState so threats with
+  // side effects on plants (e.g. blight) can reach the tiles.
+  applyTo(state: RunState): void;
   damageMsg: string;
 }
 
-const THREATS: ThreatDef[] = [
+const sub = (n: number, d: number) => Math.max(0, n - d);
+
+export const THREATS: ThreatDef[] = [
   {
     id: 'meteor_strike',
     label: 'METEOR STRIKE',
-    apply: (s) => { s.hull = Math.max(0, s.hull - 2); },
+    applyTo: (s) => { s.shelter.hull = sub(s.shelter.hull, 2); },
     damageMsg: '-2 HULL',
   },
   {
     id: 'acrid_fog',
     label: 'ACRID FOG',
-    apply: (s) => { s.oxygen = Math.max(0, s.oxygen - 2); },
+    applyTo: (s) => { s.shelter.oxygen = sub(s.shelter.oxygen, 2); },
     damageMsg: '-2 OXYGEN',
   },
   {
     id: 'power_surge',
     label: 'POWER SURGE',
-    apply: (s) => { s.power = Math.max(0, s.power - 2); },
+    applyTo: (s) => { s.shelter.power = sub(s.shelter.power, 2); },
     damageMsg: '-2 POWER',
+  },
+  // Hits all three stats for 1. Painful if you're already topping
+  // multiple bars; otherwise survivable.
+  {
+    id: 'double_strike',
+    label: 'STORM CONVERGENCE',
+    applyTo: (s) => {
+      s.shelter.hull = sub(s.shelter.hull, 1);
+      s.shelter.oxygen = sub(s.shelter.oxygen, 1);
+      s.shelter.power = sub(s.shelter.power, 1);
+    },
+    damageMsg: '-1 HULL / OXY / PWR',
+  },
+  // Oxygen damage plus a fungal sweep that regresses some growing
+  // plants by a stage. Each non-mature plant rolls 35% independently;
+  // stage 1 plants don't regress below stage 1 (they don't die).
+  {
+    id: 'plant_blight',
+    label: 'PLANT BLIGHT',
+    applyTo: (s) => {
+      s.shelter.oxygen = sub(s.shelter.oxygen, 1);
+      for (const tile of s.tiles) {
+        if (!tile.species || tile.stage === 0) continue;
+        if (tile.stage === 4) continue; // mature is safe
+        if (Math.random() < 0.35 && tile.stage > 1) {
+          tile.stage = (tile.stage - 1) as 1 | 2 | 3;
+          tile.stageStartedAt = s.gameTime;
+        }
+      }
+    },
+    damageMsg: '-1 OXY + REGRESSED PLANTS',
   },
 ];
 
@@ -94,7 +134,7 @@ export class ThreatScene implements Scene {
 
     if (!this.applied && this.t > this.duration - 1.0) {
       this.applied = true;
-      this.threat.apply(this.state.shelter);
+      this.threat.applyTo(this.state);
       // Plants adapt under stress — some mutate in response.
       this.mutatedCount = mutateGardenPlants(this.state, 0.35);
       saveRun(this.state);

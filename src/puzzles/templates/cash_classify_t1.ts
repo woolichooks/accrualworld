@@ -57,8 +57,18 @@ export const cash_classify_t1: PuzzleTemplate = {
   id: 'cash-classify-t1',
   topic: '305',
   tier: 1,
-  displayName: 'ASC 305 - CASH',
+  displayName: 'ASC 305 - CASH (T1)',
   blurb: 'CASH / EQUIVALENT / RESTRICTED',
+  staticCodex: {
+    citation: 'ASC 305-10 / ASC 230-10-20',
+    excerpt:
+      'CASH EQUIVALENTS ARE SHORT-TERM, HIGHLY LIQUID INVESTMENTS ' +
+      'WITH ORIGINAL MATURITIES OF THREE MONTHS OR LESS AT THE ' +
+      'DATE OF ACQUISITION.',
+    note:
+      'ORIGINAL MATURITY IS MEASURED FROM ACQUISITION, NOT TIME ' +
+      'REMAINING. RESTRICTED CASH IS REPORTED SEPARATELY.',
+  },
 
   generate(rng: Rng, sol: number): PuzzleInstance {
     const item = rng.pick(POOL);
@@ -75,8 +85,7 @@ export const cash_classify_t1: PuzzleTemplate = {
         `CFO HALE WANTS THIS TAGGED.\n` +
         `\n` +
         item.desc,
-      question: 'TAG FOR THE BALANCE SHEET:',
-      choices,
+      questions: [{ kind: 'mc', prompt: 'TAG FOR THE BALANCE SHEET:', choices }],
       feedbackCorrect: `FILED AS ${item.answer}. ${item.rationale}`,
       feedbackIncorrect:
         `HALE FROWNS. CORRECT TAG IS ${item.answer}. ` +
