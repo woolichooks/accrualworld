@@ -10,14 +10,42 @@ import { loadSettings } from './settings';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
+let silentAudio: HTMLAudioElement | null = null;
 
 // Per-sound gain values are kept low so the relative mix stays clean
 // (a heavy threat rumble would otherwise drown out a cursor blip).
 // MASTER_GAIN scales the lot so the overall loudness suits the
-// device — mobile speakers are noticeably quieter than desktop.
-// Clamped per-sound to prevent clipping on long tones.
-const MASTER_GAIN = 2.5;
-const MAX_PEAK = 0.75;
+// device — phone speakers are noticeably quieter than desktop and
+// iOS routes Web Audio through a gain stage that further attenuates.
+// Clamped per-sound to prevent clipping when the master multiplies.
+const MASTER_GAIN = 5.0;
+const MAX_PEAK = 0.18;
+
+// Minimum WAV: 8kHz 8-bit mono, 1 sample of silence. ~45 bytes.
+// Used to nudge iOS into the "playback" audio session so Web Audio
+// is audible even when the silent (ringer) switch is engaged.
+function silentDataUri(): string {
+  const bytes = new Uint8Array([
+    0x52,0x49,0x46,0x46, 0x25,0x00,0x00,0x00,
+    0x57,0x41,0x56,0x45, 0x66,0x6d,0x74,0x20,
+    0x10,0x00,0x00,0x00, 0x01,0x00, 0x01,0x00,
+    0x40,0x1f,0x00,0x00, 0x40,0x1f,0x00,0x00,
+    0x01,0x00, 0x08,0x00,
+    0x64,0x61,0x74,0x61, 0x01,0x00,0x00,0x00, 0x80,
+  ]);
+  let s = '';
+  for (const b of bytes) s += String.fromCharCode(b);
+  return `data:audio/wav;base64,${btoa(s)}`;
+}
+
+// iOS Safari aggressively suspends the AudioContext between
+// silences. Called before every play so a sound never fires into a
+// suspended context.
+function ensureRunning(): void {
+  if (ctx && ctx.state === 'suspended') {
+    void ctx.resume().catch(() => { /* ignore */ });
+  }
+}
 
 export function initAudio(): void {
   if (ctx) return;
@@ -28,6 +56,21 @@ export function initAudio(): void {
     master = ctx.createGain();
     master.gain.value = MASTER_GAIN;
     master.connect(ctx.destination);
+    if (ctx.state === 'suspended') {
+      void ctx.resume().catch(() => { /* ignore */ });
+    }
+    // iOS silent-switch bypass — play a 1-sample silent WAV via
+    // HTMLAudioElement so the page's audio session flips from
+    // ambient/ringer to playback. After that, WebAudio plays
+    // through the media volume slider regardless of the hardware
+    // mute switch. No-op on browsers that handle this correctly.
+    try {
+      silentAudio = new Audio(silentDataUri());
+      silentAudio.setAttribute('playsinline', '');
+      silentAudio.loop = true;
+      silentAudio.volume = 0.05;
+      void silentAudio.play().catch(() => { /* may be blocked */ });
+    } catch { /* ignore */ }
   } catch {
     /* user agent denied or unsupported */
   }
@@ -55,6 +98,7 @@ interface NoiseParams {
 function tone(p: ToneParams): void {
   if (!ctx || !master) return;
   if (!loadSettings().sfxEnabled) return;
+  ensureRunning();
   const start = ctx.currentTime + (p.delay ?? 0);
   const dur = p.duration;
   // Per-sound peak is capped so an over-eager value can't clip when
@@ -82,6 +126,7 @@ function tone(p: ToneParams): void {
 function noise(p: NoiseParams): void {
   if (!ctx || !master) return;
   if (!loadSettings().sfxEnabled) return;
+  ensureRunning();
   const start = ctx.currentTime + (p.delay ?? 0);
   const dur = p.duration;
   const peak = Math.min(MAX_PEAK, p.gain ?? 0.06);
